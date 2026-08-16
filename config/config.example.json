@@ -1,0 +1,84 @@
+{
+  "version": 2,
+  "windows": {
+    "ssh_exe": "C:\\Windows\\System32\\OpenSSH\\ssh.exe",
+    "netsh_exe": "C:\\Windows\\System32\\netsh.exe",
+    "wsl_exe": "C:\\Windows\\System32\\wsl.exe"
+  },
+  "vps_list": [
+    {
+      "id": "vps-main",
+      "host": "vps.example.com",
+      "user": "tunnel",
+      "port": 22,
+      "identity_file": "%USERPROFILE%\\.ssh\\wsl-manager-main",
+      "secret_ref": "ssh_key_main"
+    }
+  ],
+  "forwards": [
+    {
+      "id": "fwd-web-3000",
+      "listen_port": 3000,
+      "listen_address": "0.0.0.0",
+      "wsl_distro": "ubuntu-dev",
+      "wsl_port": 3000,
+      "protocol": "tcp",
+      "auto_apply": true,
+      "health_check": { "enabled": true, "fail_count_before_pause": 3 },
+      "schedule": null
+    }
+  ],
+  "tunnels": [
+    {
+      "id": "tunnel-web",
+      "type": "ssh",
+      "enabled": true,
+      "vps_id": "vps-main",
+      "local_bind": { "host": "127.0.0.1", "port": 3000 },
+      "remote_binds": [ { "host": "0.0.0.0", "port": 80 } ],
+      "keepalive_interval": 30,
+      "keepalive_count": 3,
+      "auto_start": true,
+      "health_gate": { "enabled": true }
+    }
+  ],
+  "alerts": {
+    "tunnel_down_minutes": 2,
+    "forward_fail_count": 3,
+    "vps_latency_ms": 500,
+    "check_interval_seconds": 15
+  },
+  "scheduler": [],
+  "profiles": [],
+  "ui": {
+    "start_minimized": true,
+    "close_to_tray": true,
+    "theme": "dark",
+    "language": "es",
+    "log_level": "INFO",
+    "logs_dir": "%LOCALAPPDATA%\\PortForwarder\\logs",
+    "supervisor_interval_seconds": 10,
+    "metrics_retention_days": 30,
+    "web_panel_enabled": false,
+    "web_panel_port": 8790,
+    "web_panel_bind": "127.0.0.1",
+    "web_panel_token": ""
+  },
+  "api": {
+    "enabled": false,
+    "host": "127.0.0.1",
+    "port": 8791,
+    "auth": { "mode": "token", "rate_limit_per_minute": 120 },
+    "allowed_ips": ["127.0.0.1"]
+  },
+  "mcp": {
+    "enabled": false,
+    "transport": "stdio",
+    "port": 8792,
+    "token_required": true
+  },
+  "on_close": {
+    "keep_tunnels_alive": true,
+    "clear_forwards": false
+  }
+}

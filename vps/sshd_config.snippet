@@ -1,0 +1,13 @@
+# ============================================================
+# sshd_config.snippet — configuracion recomendada en el VPS
+# Copia al final de /etc/ssh/sshd_config y reinicia sshd.
+# ============================================================
+GatewayPorts yes
+AllowTcpForwarding yes
+PasswordAuthentication no
+AllowUsers tunnel
+
+# Hardening adicional recomendado:
+# PermitRootLogin no
+# MaxAuthTries 3
+# ClientAliveInterval 60

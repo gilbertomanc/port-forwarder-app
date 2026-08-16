@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+
+# PyInstaller (specs generados; scripts/*.spec si se mantienen)
+/port-forwarder.spec
+/port-forwarder-window.spec
+build/
+dist/
+
+# Runtime de la app
+logs/
+tmp/
+*.log
+metrics.db
+backups/
+snapshots/
+tunnels/
+
+# Windows
+Thumbs.db
+desktop.ini

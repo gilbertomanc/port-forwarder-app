@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "port-forwarder"
+version = "0.1.0"
+description = "Port Forwarding Manager: forwards Windows-WSL y tunnels hacia VPS (GUI + CLI con paridad completa)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Port Forwarding Manager" }]
+keywords = ["wsl", "netsh", "ssh", "port-forwarding", "windows"]
+
+# Core: cero dependencias (stdlib puro). GUI/notificaciones: opcionales.
+[project.optional-dependencies]
+gui = [
+    "pystray>=0.19",
+    "Pillow>=10",
+    "ttkbootstrap>=1.10",
+    "winotify>=1.1",
+]
+dev = [
+    "pytest>=8.0",
+]
+
+[project.scripts]
+port-forwarder = "src.cli.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "." }
+packages = [
+    "src",
+    "src.core",
+    "src.providers",
+    "src.cli",
+    "src.gui",
+    "src.web",
+    "src.api",
+    "src.mcp",
+    "src.utils",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: pruebas que tocan el sistema real (netsh/wsl/ssh)",
+    "smoke: pruebas de humo del CLI",
+]
+addopts = "-ra --capture=sys"
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"

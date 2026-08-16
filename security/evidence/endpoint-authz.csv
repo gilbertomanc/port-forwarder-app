@@ -1,0 +1,12 @@
+metodo,ruta,sin_token,read,write,admin,veredicto
+GET,/api/v1/status,401,200,200,200,OK
+POST,/api/v1/forwards/apply,401,403,200,200,OK
+POST,/api/v1/forwards/clear?confirm=1,401,403,403,200,OK
+DELETE,/api/v1/vps/{id},401,403,403,400*,OK
+POST,/api/v1/maintenance/on?confirm=1,401,403,403,200,OK
+POST,/api/v1/forwards/clear (sin confirm),-,403,403,400,OK (requiere confirm)
+PUT,/api/v1/status,-,501,501,501,OK (metodo no soportado)
+OPTIONS,/api/v1/status,-,501,501,501,OK (metodo no soportado)
+HEAD,/api/v1/status,-,501,501,501,OK (metodo no soportado)
+POST,/api/v1/schedule (type invalido),-,403,200,200,FAIL (falta validacion de type/time)
+*400 = vps inexistente (error de aplicacion, no de authz)
