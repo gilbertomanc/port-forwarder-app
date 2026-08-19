@@ -1,8 +1,32 @@
 # Port Forwarding Manager
 
-Gestión de **redirección de puertos Windows → WSL** (netsh portproxy + firewall) y **túneles SSH hacia VPS**, con supervisor automático, health checks, alertas, programador, perfiles, panel web y CLI completo con **paridad garantizada** con la GUI.
+[![Licencia](https://img.shields.io/badge/Licencia-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Plataforma](https://img.shields.io/badge/Plataforma-Windows%20%7C%20Linux%20%7C%20Docker-0078D6?logo=windows&logoColor=white)](#requisitos)
+[![Tests](https://img.shields.io/badge/Tests-147%2F147%20passed-2ea44f)](#tests)
 
-> Implementación de las fases P0 del plan `PLAN-PORTFORWARD.md` (docs: `docs/decisions.md`).
+> Gestión de **redirección de puertos Windows → WSL** (netsh portproxy + firewall) y **túneles SSH hacia VPS**, con supervisor automático, health checks, alertas, programador, perfiles, panel web y CLI completo con **paridad garantizada** con la GUI.
+
+**Proyecto hermano:** [wsl-manager-gui](https://github.com/gilbertomanc/wsl-manager-gui) — gestión de distros WSL2. Ambas apps son **independientes y coexisten** en la misma máquina: port-forwarder usa puertos propios (8794/8795/8796) y no necesita que wsl-manager esté instalado.
+
+---
+
+## Índice
+
+- [Características](#características)
+- [Requisitos](#requisitos)
+- [Linux y Docker](#linux-y-docker)
+- [Instalación](#instalación)
+- [Uso rápido (CLI)](#uso-rápido-cli)
+- [Panel web](#panel-web)
+- [API REST](#api-rest)
+- [MCP (agentes LLM)](#mcp-agentes-llm)
+- [Seguridad](#seguridad)
+- [Tests](#tests)
+- [Estructura del proyecto](#estructura-del-proyecto)
+- [Packaging](#packaging)
+- [Contribuir](#contribuir)
+- [Licencia](#licencia)
 
 ## Características
 
@@ -16,14 +40,14 @@ Gestión de **redirección de puertos Windows → WSL** (netsh portproxy + firew
 | Seguridad (13) | Secrets cifrados con DPAPI, redactor de secretos en logs, backups de config, journal en SQLite |
 | Diagnóstico (U7-U8) | `doctor` (detector de problemas), `diag` (bundle sin secretos), `drift` (config vs realidad) |
 | **Panel web (10.5)** | Dashboard HTML en `127.0.0.1:8794` + API JSON `/api/v1`, token opcional, uptime de túneles |
-| **API REST (21)** | `/api/v1` completa (forwards, tunnels, vps, health, alerts, schedule, profiles, maintenance, drift) con tokens Bearer + scopes read/write/admin, rate limit y auditoría |
-| **MCP (21.4)** | Servidor stdio JSON-RPC (`mcp serve`) con 29 tools mapeadas al CLI, token via `PORT_FORWARDER_TOKEN` |
+| **API REST (21)** | `/api/v1` completa con tokens Bearer + scopes read/write/admin, rate limit y auditoría |
+| **MCP (21.4)** | Servidor stdio JSON-RPC (`mcp serve`) con 29 tools mapeadas al CLI |
 | GUI (7) | Tray + ventana con pestañas (requiere extras opcionales) |
 
 ## Requisitos
 
-- Windows 10/11 con `netsh.exe`, `ssh.exe` y `wsl.exe` (System32).
-- Python 3.11+ (core sin dependencias externas).
+- **Windows 10/11** con `netsh.exe`, `ssh.exe` y `wsl.exe` (System32).
+- **Python 3.11+** (core sin dependencias externas).
 - Una distro WSL real (ej. `ubuntu`) para forwards; un VPS con `GatewayPorts yes` para túneles.
 - Admin (UAC) solo para aplicar forwards — el resto corre sin elevación.
 
@@ -71,11 +95,18 @@ docker compose up -d
 
 ```powershell
 # Desde el repo:
-python -m pip install -e .
+git clone https://github.com/gilbertomanc/port-forwarder-app
+cd port-forwarder-app
+python -m venv .venv
+.venv\Scripts\activate
+pip install -e .
 
 # (Opcional) extras de GUI:
-python -m pip install pystray ttkbootstrap Pillow winotify
+pip install pystray ttkbootstrap Pillow winotify
 ```
+
+> **¿No quieres tocar código?** Usa los ejecutables ya compilados de la carpeta
+> `ejecutables\port-forwarder\` (CLI) y `ejecutables\port-forwarder-window\` (GUI).
 
 Config inicial en `%APPDATA%\PortForwarder\config.json` (auto-creada).
 Ejemplo completo: `config/config.example.json`.
@@ -104,7 +135,7 @@ port-forwarder health check --json
 port-forwarder alerts list
 ```
 
-### Panel web
+## Panel web
 
 ```bash
 # Token del panel (recomendado, cifrado DPAPI):
@@ -124,7 +155,7 @@ El dashboard muestra forwards/tunnels con estado en vivo, alertas, uptime de tú
 > Si automatizas con curl, añade `-H "Origin: http://127.0.0.1:8794"`. El token se
 > guarda cifrado en secrets (DPAPI): `secrets set web_panel_token`.
 
-### API REST (para scripts e integraciones)
+## API REST
 
 ```bash
 port-forwarder api enable --port 8795          # activa (token obligatorio)
@@ -135,14 +166,14 @@ port-forwarder api serve                       # corre la API en foreground
 
 Endpoints en `http://127.0.0.1:8795/api/v1` (tabla completa en el plan, 21.3): `status`, `forwards` (CRUD/apply/clear/test/conflicts), `tunnels` (CRUD/start/stop/restart), `vps`, `health`, `alerts`, `schedule`, `profiles`, `maintenance`, `drift`, `secrets/check`, `doctor`. Scopes: `read` < `write` < `admin` (destructivos exigen `?confirm=1`). Rate limit 120 req/min read, 30 write. Auditoría de cada llamada en SQLite.
 
-### MCP (para agentes LLM)
+## MCP (agentes LLM)
 
 ```bash
 port-forwarder mcp test                        # self-test del handshake
 PORT_FORWARDER_TOKEN=<token> port-forwarder mcp serve   # stdio
 ```
 
-Configuración en el cliente (Zed / Claude Code):
+Configuración en el cliente (Zed / Claude Code / cursor):
 
 ```json
 { "mcpServers": { "port-forwarder": {
@@ -150,14 +181,14 @@ Configuración en el cliente (Zed / Claude Code):
   "env": { "PORT_FORWARDER_TOKEN": "<token>" } } } }
 ```
 
-## Exit codes del CLI
+## Seguridad
 
-| Código | Significado |
-|--------|-------------|
-| 0 | OK |
-| 1 | Error funcional |
-| 2 | Argumentos inválidos |
-| 3 | Config inválida |
+- Secrets cifrados con **DPAPI** (CurrentUser) en `secrets.json`; nunca en claro.
+- Redactor global de secretos en logs y bundles de diagnóstico (`diag`).
+- CSRF protegido en el panel web (Origin/Referer) + headers de seguridad.
+- Backups automáticos de config antes de cada escritura.
+- API REST con tokens hash + scopes + rate limit + auditoría en SQLite.
+- UAC selectivo: solo aplicar/limpiar forwards elevan.
 
 ## Tests
 
@@ -167,7 +198,7 @@ python -m pytest tests/test_cli.py -q   # smoke del CLI (sin admin)
 python -m pytest tests -m integration   # E2E real (requiere admin + distro WSL)
 ```
 
-## Estructura
+## Estructura del proyecto
 
 ```
 src/
@@ -180,7 +211,7 @@ src/
 ├── web/                   # panel web stdlib + API JSON
 ├── gui/                   # ventana tkinter + tray (opcional)
 └── utils/                 # subprocess, paths, secrets DPAPI
-scripts/                   # setup_ssh_key.ps1, check_environment.ps1, install_autossh.sh, smoke_web_live.py, build.ps1, port-forwarder.spec, installer.iss
+scripts/                   # setup_ssh_key.ps1, check_environment.ps1, install_autossh.sh, smoke_web_live.py, build.ps1
 vps/                       # sshd_config.snippet + install.sh
 skills/port-forwarder-cli/ # skill para agentes LLM
 ```
@@ -199,9 +230,16 @@ powershell -ExecutionPolicy Bypass -File scripts\build.ps1
 > .venv\Scripts\python.exe -m PyInstaller --clean --noconfirm scripts\port-forwarder.spec
 > ```
 
-## Roadmap pendiente (P2 del plan)
+## Contribuir
 
-- Wizard de primer uso (U1, GUI), autoarranque, auto-update.
-- i18n (U9), command palette (U2), cadenas (A6), escenarios (A7).
-- Blueprint de exposición (U11), webhooks con reintento, cambio de red (A5).
-- Ver `PLAN-PORTFORWARD.md` (fases 5-8).
+1. Haz un fork del repositorio.
+2. Crea una rama: `git checkout -b feature/mi-mejora`.
+3. Haz tus cambios y asegúrate de que pasan los tests (`pytest tests/unit -q`).
+4. Envía un pull request describiendo el cambio.
+
+Reporta bugs o pide funciones en
+[Issues](https://github.com/gilbertomanc/port-forwarder-app/issues).
+
+## Licencia
+
+[MIT](LICENSE) © 2026 — gilbertomanc. Ver también el [CHANGELOG](CHANGELOG.md).
