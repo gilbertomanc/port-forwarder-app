@@ -18,7 +18,7 @@ if [ ! -f "$CONFIG" ]; then
   "version": 2,
   "ui": {
     "web_panel_enabled": true,
-    "web_panel_port": 8790,
+    "web_panel_port": 8794,
     "web_panel_bind": "0.0.0.0",
     "web_panel_token": "$TOKEN"
   }

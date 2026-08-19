@@ -571,9 +571,9 @@ def _build_settings_tab(nb, sup: Supervisor, root) -> None:
 
     def _save() -> None:
         try:
-            web_port = int(web_port_var.get() or 8790)
-            api_port = int(api_port_var.get() or 8791)
-            mcp_port = int(mcp_port_var.get() or 8792)
+            web_port = int(web_port_var.get() or 8794)
+            api_port = int(api_port_var.get() or 8795)
+            mcp_port = int(mcp_port_var.get() or 8796)
         except ValueError:
             messagebox.showerror("Port Forwarding", "Puertos invalidos", parent=root)
             return

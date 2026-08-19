@@ -11,8 +11,8 @@ services:
     environment:
       - PORT_FORWARDER_WEB_TOKEN=${PF_WEB_TOKEN:-}
     ports:
-      - "8790:8790"   # panel web (protegido con clave)
-      - "8791:8791"   # API REST (si la activas en config)
+      - "8794:8794"   # panel web (protegido con clave)
+      - "8795:8795"   # API REST (si la activas en config)
     volumes:
       - pf-data:/data
       # Opcional: tus claves SSH para los tuneles hacia VPS

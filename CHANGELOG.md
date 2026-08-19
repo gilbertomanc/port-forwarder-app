@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.3 (2026-08-19) — puertos propios (independencia de wsl-manager-gui)
+
+- Los puertos por defecto dejan de chocar con wsl-manager-gui: **panel web
+  8790 → 8794**, **API REST 8791 → 8795**, **MCP 8792 → 8796**.
+- Aplicado en `config.py`, `web/server.py`, `web/__init__.py`, `gui/window.py`,
+  `config/config.example.json`, `docker-compose.yml` y documentación.
+- Las configs existentes conservan sus valores; esta instalación ya usaba 8794.
+- Ambas apps pueden ejecutarse a la vez en la misma máquina sin colisiones.
+
 ## v0.2.2 (2026-08-19) — supervisor honra el token DPAPI del panel web
 
 - `src/core/supervisor.py`: `_web_panel_token()` resuelve el token del panel

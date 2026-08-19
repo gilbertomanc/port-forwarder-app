@@ -39,7 +39,12 @@ class FakeClock:
 
 
 @pytest.fixture
-def env(tmp_path):
+def env(tmp_path, monkeypatch):
+    # Aisla el SecretsStore (DPAPI) para que los tests no vean los secrets
+    # reales del usuario en %APPDATA%.
+    monkeypatch.setattr(
+        "src.utils.path.secrets_path", lambda: tmp_path / "secrets.json"
+    )
     store = ConfigStore(path=str(tmp_path / "config.json"))
     store.cfg.ui.supervisor_interval_seconds = 5
     store.cfg.forwards.append(Forward(

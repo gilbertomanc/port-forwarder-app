@@ -60,21 +60,21 @@
     "supervisor_interval_seconds": 10,
     "metrics_retention_days": 30,
     "web_panel_enabled": false,
-    "web_panel_port": 8790,
+    "web_panel_port": 8794,
     "web_panel_bind": "127.0.0.1",
     "web_panel_token": ""
   },
   "api": {
     "enabled": false,
     "host": "127.0.0.1",
-    "port": 8791,
+    "port": 8795,
     "auth": { "mode": "token", "rate_limit_per_minute": 120 },
     "allowed_ips": ["127.0.0.1"]
   },
   "mcp": {
     "enabled": false,
     "transport": "stdio",
-    "port": 8792,
+    "port": 8796,
     "token_required": true
   },
   "on_close": {

@@ -41,7 +41,7 @@ from src.utils.http_server import BoundedThreadingHTTPServer
 
 log = logging.getLogger("port-forwarder.web")
 
-DEFAULT_PORT = 8790
+DEFAULT_PORT = 8794
 DEFAULT_BIND = "127.0.0.1"
 
 

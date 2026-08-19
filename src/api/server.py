@@ -252,7 +252,7 @@ class ApiServer:
         service: AppService,
         auth: AuthService,
         host: str = "127.0.0.1",
-        port: int = 8791,
+        port: int = 8795,
         allowed_ips: list[str] | None = None,
         max_connections: int = 50,
     ) -> None:

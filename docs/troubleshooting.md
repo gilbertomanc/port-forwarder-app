@@ -12,7 +12,7 @@
 | `secrets check` falla | secret no definido | `port-forwarder secrets set <ref>` (el valor se pide por stdin) |
 | Panel web no abre | puerto ocupado o bind inválido | `port-forwarder web status`; cambia `ui.web_panel_port`; usa `--bind 0.0.0.0` + token para red |
 | `web start --bind 0.0.0.0` se niega | falta token | `printf 'token' | port-forwarder secrets set web_panel_token` y reintenta |
-| `web start` con curl/POST da 403 | proteccion CSRF (v0.2.1) | añade `-H "Origin: http://127.0.0.1:8790"` (el mismo host y puerto del panel) |
+| `web start` con curl/POST da 403 | proteccion CSRF (v0.2.1) | añade `-H "Origin: http://127.0.0.1:8794"` (el mismo host y puerto del panel) |
 | `conflicts` reporta puerto ocupado | otro servicio escucha | Cambia el puerto o detén el servicio |
 | Logs sin secretos visibles | redactor global (por diseño) | Busca el evento en SQLite (`events`) si necesitas auditoría |
 | `python -m src.cli` no encuentra `src` | ejecutado fuera del repo | Corre desde `port-forwarder-app/` o instala con `pip install -e .` |

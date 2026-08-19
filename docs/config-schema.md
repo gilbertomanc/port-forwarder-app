@@ -44,13 +44,13 @@ Los paths con `%VAR%` se expanden al cargar. Se valida en cada carga
     "logs_dir": "%LOCALAPPDATA%\\PortForwarder\\logs",
     "supervisor_interval_seconds": 10, "metrics_retention_days": 30,
     "web_panel_enabled": false,
-    "web_panel_port": 8790, "web_panel_bind": "127.0.0.1",
+    "web_panel_port": 8794, "web_panel_bind": "127.0.0.1",
     "web_panel_token": ""
   },
-  "api":   { "enabled": false, "host": "127.0.0.1", "port": 8791,
+  "api":   { "enabled": false, "host": "127.0.0.1", "port": 8795,
              "auth": { "mode": "token", "rate_limit_per_minute": 120 },
              "allowed_ips": ["127.0.0.1"] },
-  "mcp":   { "enabled": false, "transport": "stdio", "port": 8792,
+  "mcp":   { "enabled": false, "transport": "stdio", "port": 8796,
              "token_required": true },
   "on_close": { "keep_tunnels_alive": true, "clear_forwards": false },
   "webhooks": [ { "id", "url", "events": [], "secret_ref": null } ],
@@ -75,3 +75,7 @@ Los paths con `%VAR%` se expanden al cargar. Se valida en cada carga
 | `webhooks` | M11 (P1, ya operativo en CLI) |
 | `maintenance` | F15/A8 (P1, ya operativo) |
 | `ui.auto_assign_port_range` | F17 (P1) |
+
+> **v0.2.3:** los puertos por defecto pasan a **8794 (web) / 8795 (API) / 8796 (MCP)**
+> para que port-forwarder-app y wsl-manager-gui (8790/8791/8792) puedan convivir
+> en la misma máquina sin colisiones. Las configs existentes conservan sus valores.

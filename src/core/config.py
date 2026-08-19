@@ -145,7 +145,8 @@ class Ui:
     supervisor_interval_seconds: int = 10
     metrics_retention_days: int = 30
     web_panel_enabled: bool = False
-    web_panel_port: int = 8790
+    # Puertos propios (8794/8795/8796): no chocan con wsl-manager-gui (8790/8791/8792)
+    web_panel_port: int = 8794
     web_panel_bind: str = "127.0.0.1"
     web_panel_token: str = ""  # opcional; recomendado si bind != loopback
     auto_assign_port_range: str = "8000-9000"  # F17
@@ -155,7 +156,7 @@ class Ui:
 class Api:
     enabled: bool = False
     host: str = "127.0.0.1"
-    port: int = 8791
+    port: int = 8795
     auth_mode: str = "token"
     rate_limit_per_minute: int = 120
     allowed_ips: list[str] = field(default_factory=lambda: ["127.0.0.1"])
@@ -165,7 +166,7 @@ class Api:
 class Mcp:
     enabled: bool = False
     transport: str = "stdio"
-    port: int = 8792
+    port: int = 8796
     token_required: bool = True
     token: str = ""
 

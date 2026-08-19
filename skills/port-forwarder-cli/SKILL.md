@@ -145,25 +145,24 @@ port-forwarder gui show|hide|quit        # control de la GUI via IPC
 ### Panel web local
 
 ```bash
-port-forwarder web start [--port 8790] [--bind 127.0.0.1] [--no-supervisor]
+port-forwarder web start [--port 8794] [--bind 127.0.0.1] [--no-supervisor]
 port-forwarder web stop
 port-forwarder web status [--json]
 printf 'token' | port-forwarder secrets set web_panel_token   # token cifrado (DPAPI)
 ```
 
-- Abre el dashboard en `http://127.0.0.1:8790` (mismo estado y acciones que CLI/GUI).
+- Abre el dashboard en `http://127.0.0.1:8794` (mismo estado y acciones que CLI/GUI).
 - El panel arranca tambien el supervisor salvo `--no-supervisor`.
 - El token del panel se guarda en secrets (DPAPI); si se usa, la API exige
   `Authorization: Bearer <token>` (el navegador la pide una vez).
 - **CSRF (importante):** los POST del panel exigen `Origin`/`Referer` del mismo
-  host. Scripts con curl: añade `-H "Origin: http://127.0.0.1:8790"`.
-- Para consultar desde el movil: `--bind 0.0.0.0` y token obligatorio.
+  host. Scripts con curl: añade `-H "Origin: http://127.0.0.1:8794"`.
 - Para consultar desde el movil: `--bind 0.0.0.0` y token obligatorio (sin token, `web start` solo avisa, no bloquea).
 
 ### API REST
 
 ```bash
-port-forwarder api enable [--port 8791]  # activa (token obligatorio)
+port-forwarder api enable [--port 8795]  # activa (token obligatorio)
 port-forwarder api disable
 port-forwarder api status [--json]
 port-forwarder api serve [--port N]      # foreground
@@ -172,7 +171,7 @@ port-forwarder api tokens list [--json]
 port-forwarder api tokens revoke <id>
 ```
 
-- Endpoints en `http://127.0.0.1:8791/api/v1/*`; header `Authorization: Bearer <token>`.
+- Endpoints en `http://127.0.0.1:8795/api/v1/*`; header `Authorization: Bearer <token>`.
 - Scopes: read < write < admin; destructivos exigen `?confirm=1`.
 - El token se muestra **una sola vez** al crearlo.
 

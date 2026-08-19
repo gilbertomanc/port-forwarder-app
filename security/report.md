@@ -173,6 +173,6 @@ La aplicación tiene una **base sólida**: cero dependencias runtime (stdlib), s
 | **H3 Crash por concurrencia** | `BoundedThreadingHTTPServer` (máx. 50 conexiones, rechaza el exceso) + `threading.Lock` en todos los métodos de `MetricsStore` (conexión SQLite serializada) | En vivo: 200 conexiones paralelas → server vivo (antes moría con 130); tests `test_concurrent_access_no_crash` + `test_api_survives_concurrent_burst` |
 | **H4 Fuga del token del panel** | Token via `secrets set web_panel_token` (DPAPI); el campo legado de config queda deprecado con aviso; `diag` redacta `ui.web_panel_token` | En vivo: token ausente en config.json y diag.json (0 coincidencias); tests `test_redact_config_hides_panel_token` |
 
-**Nota operativa (H1):** los scripts que llamen a la API del panel web (`/api/v1/*` del puerto 8790) deben enviar `Origin: http://<host>:<puerto>` en los POST. La API REST (`/api/v1` del puerto 8791) no se ve afectada (token Bearer obligatorio).
+**Nota operativa (H1):** los scripts que llamen a la API del panel web (`/api/v1/*` del puerto 8794) deben enviar `Origin: http://<host>:<puerto>` en los POST. La API REST (`/api/v1` del puerto 8795) no se ve afectada (token Bearer obligatorio).
 
 Suite tras la remediación: **134 passed, 2 skipped** (E2E requieren admin).

@@ -18,8 +18,8 @@ ENV XDG_CONFIG_HOME=/data \
 
 VOLUME ["/data"]
 
-# 8790 panel web | 8791 API REST | 8792 MCP (http)
-EXPOSE 8790 8791 8792
+# 8794 panel web | 8795 API REST | 8796 MCP (http)
+EXPOSE 8794 8795 8796
 
 ENTRYPOINT ["/app/docker/entrypoint.sh"]
 CMD ["web", "start"]

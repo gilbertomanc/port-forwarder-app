@@ -118,7 +118,7 @@ def test_redact_config_hides_panel_token():
     """H4: el bundle diag nunca incluye el token del panel en claro."""
     from src.cli.commands_ux import _redact_config
 
-    cfg = {"ui": {"web_panel_token": "clave-plana-123", "port": 8790}}
+    cfg = {"ui": {"web_panel_token": "clave-plana-123", "port": 8794}}
     redacted = _redact_config(cfg)
     assert redacted["ui"]["web_panel_token"] != "clave-plana-123"
     assert "clave-plana-123" not in str(redacted)
