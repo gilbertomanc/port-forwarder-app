@@ -1,0 +1,21 @@
+# Port Forwarding Manager - orquestacion con Docker Compose
+#   docker compose up -d
+# La clave del panel se define con:  PF_WEB_TOKEN=mi-clave docker compose up -d
+# (si no se define, el entrypoint genera una y la muestra en los logs)
+services:
+  port-forwarder:
+    build: .
+    image: port-forwarder:latest
+    container_name: port-forwarder
+    restart: unless-stopped
+    environment:
+      - PORT_FORWARDER_WEB_TOKEN=${PF_WEB_TOKEN:-}
+    ports:
+      - "8790:8790"   # panel web (protegido con clave)
+      - "8791:8791"   # API REST (si la activas en config)
+    volumes:
+      - pf-data:/data
+      # Opcional: tus claves SSH para los tuneles hacia VPS
+      # - ${USERPROFILE}/.ssh:/root/.ssh:ro
+volumes:
+  pf-data:

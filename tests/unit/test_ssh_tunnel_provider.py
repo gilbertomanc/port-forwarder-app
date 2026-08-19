@@ -74,7 +74,7 @@ def test_password_env_sets_askpass(tmp_path):
     assert env is not None
     assert env["SSH_ASKPASS_REQUIRE"] == "force"
     assert env["PF_ASKPASS_PW"] == "secreta123"
-    assert env["SSH_ASKPASS"].endswith("port-forwarder-askpass.cmd")
+    assert "port-forwarder-askpass" in env["SSH_ASKPASS"]  # .cmd en Win, .sh en *nix
     # sin contrasena -> None
     assert p._password_env(make_vps()) is None
 

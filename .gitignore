@@ -23,3 +23,6 @@ tunnels/
 # Windows
 Thumbs.db
 desktop.ini
+
+# Lanzador de autoarranque (rutas absolutas de esta maquina)
+/start_port_forwarder.vbs

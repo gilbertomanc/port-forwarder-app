@@ -57,6 +57,7 @@ class Supervisor:
         metrics: MetricsStore | None = None,
         interval: float | None = None,
         clock: Callable[[], float] = time.monotonic,
+        web_panel_external: bool = False,
     ) -> None:
         self.store = store
         self.netsh = netsh or netsh_provider.NetshProvider()
@@ -69,6 +70,8 @@ class Supervisor:
             store.cfg.ui.supervisor_interval_seconds
         )
         self.clock = clock
+        # True si el panel web lo gestiona un proceso externo (cli web start)
+        self._web_external = web_panel_external
 
         self._stop_ev = threading.Event()
         self._thread: threading.Thread | None = None
@@ -158,10 +161,14 @@ class Supervisor:
 
         La clave (ui.web_panel_token) es OBLIGATORIA: sin ella el panel
         no se arranca. Si cambia clave/puerto/bind, se reinicia.
+        Con web_panel_external=True el panel lo gestiona otro proceso
+        (cli web start) y aqui solo se valida que siga respondiendo.
         """
         import logging
 
         log = logging.getLogger("port-forwarder.supervisor")
+        if self._web_external:
+            return
         cfg = self.store.cfg
         desired = cfg.ui.web_panel_enabled and bool(cfg.ui.web_panel_token)
 

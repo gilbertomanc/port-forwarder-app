@@ -41,7 +41,12 @@ class NetshProvider:
         powershell_exe: str | None = None,
         elevate: bool = True,
     ) -> None:
-        self.netsh_exe = netsh_exe or r"C:\Windows\System32\netsh.exe"
+        import sys as _sys
+
+        if netsh_exe is None:
+            netsh_exe = (r"C:\Windows\System32\netsh.exe"
+                         if _sys.platform == "win32" else "netsh")
+        self.netsh_exe = netsh_exe
         self.powershell_exe = powershell_exe or sp.POWERSHELL_EXE
         self.elevate = elevate  # UAC selectivo para add/remove
 

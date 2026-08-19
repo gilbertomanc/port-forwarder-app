@@ -24,13 +24,14 @@ from src.utils import subprocess_async as sp
 from src.utils.secrets import SecretsStore
 
 
-def _ctx(args: argparse.Namespace):
+def _ctx(args: argparse.Namespace, web_external: bool = False):
     store = ConfigStore()
     netsh = NetshProvider(netsh_exe=store.cfg.windows.netsh_exe or None)
     wsl = WslIpProvider(wsl_exe=store.cfg.windows.wsl_exe or None)
     ssh = SshTunnelProvider(ssh_exe=store.cfg.windows.ssh_exe or None)
     metrics = MetricsStore()
-    sup = Supervisor(store, netsh=netsh, wsl=wsl, ssh=ssh, metrics=metrics)
+    sup = Supervisor(store, netsh=netsh, wsl=wsl, ssh=ssh, metrics=metrics,
+                     web_panel_external=web_external)
     return store, netsh, wsl, ssh, metrics, sup
 
 
@@ -382,7 +383,9 @@ def cmd_web(args: argparse.Namespace) -> int:
     from src.web.server import WebPanel
 
     action = getattr(args, "action", "status")
-    store, netsh, wsl, ssh, metrics, sup = _ctx(args)
+    store, netsh, wsl, ssh, metrics, sup = _ctx(
+        args, web_external=not getattr(args, "no_supervisor", False)
+    )
     ui = store.cfg.ui
     pidfile = paths.data_dir() / "web.pid"
 
@@ -444,6 +447,8 @@ def cmd_web(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 1
+    # El panel lo gestiona este proceso: el supervisor no debe competir
+    # (sup se creo con web_panel_external=True cuando no hay --no-supervisor).
     pidfile.write_text(json.dumps({"pid": os.getpid(), "port": port,
                                    "bind": bind}), encoding="utf-8")
     panel = WebPanel(sup, port=port, bind=bind, token=token)

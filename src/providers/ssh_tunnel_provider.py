@@ -40,7 +40,12 @@ class SshTunnelProvider:
         pid_dir: str | Path | None = None,
         log_dir: str | Path | None = None,
     ) -> None:
-        self.ssh_exe = ssh_exe or r"C:\Windows\System32\OpenSSH\ssh.exe"
+        import sys as _sys
+
+        if ssh_exe is None:
+            ssh_exe = (r"C:\Windows\System32\OpenSSH\ssh.exe"
+                       if _sys.platform == "win32" else "ssh")
+        self.ssh_exe = ssh_exe
         from src.utils import path as paths
 
         self.pid_dir = Path(pid_dir) if pid_dir else paths.data_dir() / "tunnels"
@@ -55,17 +60,28 @@ class SshTunnelProvider:
     def _askpass_script() -> str:
         """Helper para autenticacion por CONTRASENA (SSH_ASKPASS).
 
-        ssh.exe (OpenSSH de Windows) no acepta la clave por linea de
-        comandos; usa SSH_ASKPASS: un programa que imprime la contrasena.
-        El .cmd se crea una vez en el directorio temporal del usuario.
+        ssh no acepta la clave por linea de comandos; usa SSH_ASKPASS: un
+        programa que imprime la contrasena. Windows: .cmd; Linux: .sh.
         """
+        import stat
+        import sys as _sys
         import tempfile
 
-        path = Path(tempfile.gettempdir()) / "port-forwarder-askpass.cmd"
+        tempdir = Path(tempfile.gettempdir())
+        if _sys.platform == "win32":
+            path = tempdir / "port-forwarder-askpass.cmd"
+            if not path.exists():
+                path.write_text(
+                    "@echo off\r\necho %PF_ASKPASS_PW%\r\n", encoding="ascii"
+                )
+            return str(path)
+        path = tempdir / "port-forwarder-askpass.sh"
         if not path.exists():
             path.write_text(
-                "@echo off\r\necho %PF_ASKPASS_PW%\r\n", encoding="ascii"
+                "#!/bin/sh\nprintf '%s\\n' \"$PF_ASKPASS_PW\"\n",
+                encoding="ascii",
             )
+            path.chmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
         return str(path)
 
     def _password_env(self, vps: Vps) -> dict[str, str] | None:

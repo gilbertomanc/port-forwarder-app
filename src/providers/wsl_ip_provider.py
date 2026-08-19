@@ -29,7 +29,12 @@ class WslIpProvider:
         cache_ttl: float = 5.0,
         timeout: float = 30.0,
     ) -> None:
-        self.wsl_exe = wsl_exe or r"C:\Windows\System32\wsl.exe"
+        import sys as _sys
+
+        if wsl_exe is None:
+            wsl_exe = (r"C:\Windows\System32\wsl.exe"
+                       if _sys.platform == "win32" else "wsl")
+        self.wsl_exe = wsl_exe
         self.cache_ttl = cache_ttl
         self.timeout = timeout
         self._cache: dict[str, tuple[float, str | None]] = {}

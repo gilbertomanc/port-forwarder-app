@@ -27,6 +27,44 @@ Gestión de **redirección de puertos Windows → WSL** (netsh portproxy + firew
 - Una distro WSL real (ej. `ubuntu`) para forwards; un VPS con `GatewayPorts yes` para túneles.
 - Admin (UAC) solo para aplicar forwards — el resto corre sin elevación.
 
+## Linux y Docker
+
+El **core es multiplataforma** (Python 3.11+): panel web, supervisor, túneles SSH,
+API REST, MCP, programador, perfiles, alertas y CLI funcionan en Linux y macOS
+sin dependencias externas. Solo los **forwards Windows→WSL** (`netsh portproxy` +
+firewall) son exclusivos de Windows.
+
+### Ejecutar en Linux (sin contenedor)
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e .  # core, sin extras de GUI
+
+port-forwarder doctor                              # entornos no soportados: avisa
+port-forwarder vps add --id vps-main --host vps.example.com --user tunnel --identity ~/.ssh/wsl-manager-main
+port-forwarder tunnels add --id tunnel-web --vps vps-main --local 127.0.0.1:8080 --remote 0.0.0.0:80
+port-forwarder web start                           # panel web + supervisor en foreground
+```
+
+Los datos viven en `$XDG_CONFIG_HOME/PortForwarder` o `~/.config/PortForwarder` y los
+logs en `$XDG_DATA_HOME/PortForwarder/logs`.
+
+### Contenedor Docker
+
+```bash
+# clave del panel (si se omite, el entrypoint la genera y la muestra en los logs)
+export PF_WEB_TOKEN=mi-clave-secreta
+
+docker compose build
+docker compose up -d
+# panel web en http://localhost:8790 (requiere la clave)
+```
+
+- Imagen: `python:3.11-slim` + `openssh-client` (para los túneles SSH).
+- Volumen `pf-data` en `/data` (config, secrets, métricas, pidfiles) — es persistente.
+- Opcional: monta tus claves SSH con `- ${USERPROFILE}/.ssh:/root/.ssh:ro` en `docker-compose.yml`.
+- Puertos: `8790` panel web · `8791` API REST · `8792` MCP (si se activan).
+
 ## Instalación
 
 ```powershell
