@@ -99,10 +99,13 @@ git clone https://github.com/gilbertomanc/port-forwarder-app
 cd port-forwarder-app
 python -m venv .venv
 .venv\Scripts\activate
-pip install -e .
+pip install -e .              # core + CLI (cero dependencias externas)
 
 # (Opcional) extras de GUI:
-pip install pystray ttkbootstrap Pillow winotify
+pip install -e ".[gui]"
+
+# (Opcional) para ejecutar los tests: añade pytest
+pip install -e ".[dev]"
 ```
 
 > **¿No quieres tocar código?** Usa los ejecutables ya compilados de la carpeta
@@ -193,6 +196,8 @@ Configuración en el cliente (Zed / Claude Code / cursor):
 ## Tests
 
 ```bash
+pip install -e ".[dev]"      # añade pytest (el core no necesita dependencias)
+
 python -m pytest tests/unit -q          # unit (sin admin)
 python -m pytest tests/test_cli.py -q   # smoke del CLI (sin admin)
 python -m pytest tests -m integration   # E2E real (requiere admin + distro WSL)
