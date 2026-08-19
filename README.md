@@ -191,6 +191,12 @@ powershell -ExecutionPolicy Bypass -File scripts\build.ps1
 # -> dist\port-forwarder\port-forwarder.exe  (+ PortForwarder-Setup.exe si hay Inno Setup)
 ```
 
+> Si el `python` del PATH no tiene PyInstaller (p. ej. apunta a otro venv),
+> usa el venv del proyecto directamente:
+> ```powershell
+> .venv\Scripts\python.exe -m PyInstaller --clean --noconfirm scripts\port-forwarder.spec
+> ```
+
 ## Roadmap pendiente (P2 del plan)
 
 - Wizard de primer uso (U1, GUI), autoarranque, auto-update.

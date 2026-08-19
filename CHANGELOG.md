@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.2 (2026-08-19) — supervisor honra el token DPAPI del panel web
+
+- `src/core/supervisor.py`: `_web_panel_token()` resuelve el token del panel
+  primero desde SecretsStore (DPAPI) con fallback a `ui.web_panel_token`
+  (legacy). `_sync_web_panel` usa el token resuelto, de modo que el panel
+  arrancado por la GUI/supervisor respeta `secrets set web_panel_token`.
+
 ## v0.2.1 (2026-08-14) — Remediación de seguridad (High)
 
 - **H1 CSRF**: el panel web exige `Origin`/`Referer` del mismo host en todos

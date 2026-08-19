@@ -156,6 +156,18 @@ class Supervisor:
             return
         self._sync_web_panel()
 
+    def _web_panel_token(self) -> str:
+        """Token del panel web: primero SecretsStore (DPAPI), fallback a config."""
+        try:
+            from src.utils import secrets as sec
+
+            store = sec.SecretsStore()
+            if store.check("web_panel_token"):
+                return store.get("web_panel_token")
+        except Exception:  # noqa: BLE001 - secrets invalidos: seguir con config
+            pass
+        return self.store.cfg.ui.web_panel_token
+
     def _sync_web_panel(self) -> None:
         """Arranca/para el panel web segun la config (Ajustes de la GUI).
 
@@ -170,13 +182,14 @@ class Supervisor:
         if self._web_external:
             return
         cfg = self.store.cfg
-        desired = cfg.ui.web_panel_enabled and bool(cfg.ui.web_panel_token)
+        token = self._web_panel_token()
+        desired = cfg.ui.web_panel_enabled and bool(token)
 
         web = getattr(self, "_web", None)
         if desired and web is not None:
             if (web.port == cfg.ui.web_panel_port
                     and web.bind == cfg.ui.web_panel_bind
-                    and web.token == cfg.ui.web_panel_token):
+                    and web.token == token):
                 return
             self._stop_web(web)
             web = None
@@ -192,7 +205,7 @@ class Supervisor:
                 self,
                 port=cfg.ui.web_panel_port,
                 bind=cfg.ui.web_panel_bind,
-                token=cfg.ui.web_panel_token,
+                token=token,
                 metrics=self.metrics,
             )
             panel.start()
