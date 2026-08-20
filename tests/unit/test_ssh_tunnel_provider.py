@@ -67,6 +67,18 @@ def test_build_command_with_autossh(tmp_path):
     assert "-R" in cmd
 
 
+def test_cmd_matches_detects_r_forward(tmp_path):
+    """Detecta procesos ssh del tunnel por la linea de comandos (-R)."""
+    p = make_provider(tmp_path)
+    tun = make_tunnel()  # local 3000, remote 80
+    good = r"C:\Windows\System32\OpenSSH\ssh.exe -N -R 0.0.0.0:80:127.0.0.1:3000 debian@vps"
+    other_port = r"C:\Windows\System32\OpenSSH\ssh.exe -N -R 0.0.0.0:8080:127.0.0.1:3000 debian@vps"
+    other_local = r"C:\Windows\System32\OpenSSH\ssh.exe -N -R 0.0.0.0:80:127.0.0.1:9999 debian@vps"
+    assert p._cmd_matches(tun, good)
+    assert not p._cmd_matches(tun, other_port)
+    assert not p._cmd_matches(tun, other_local)
+
+
 def test_build_command_with_password(tmp_path):
     """Con contrasena se limita la autenticacion a password/keyboard."""
     p = make_provider(tmp_path)

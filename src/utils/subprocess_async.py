@@ -11,6 +11,7 @@ import sys
 from typing import Sequence
 
 CREATE_NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0
+DETACHED_PROCESS = 0x00000008 if sys.platform == "win32" else 0
 
 POWERSHELL_EXE = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
 

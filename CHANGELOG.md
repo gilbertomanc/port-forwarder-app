@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.6 (2026-08-19) — tuneles SSH estables
+
+- Los tuneles se lanzan con `DETACHED_PROCESS`: sobreviven aunque el CLI
+  `tunnels start` (o el proceso que los lanza) salga.
+- `is_alive()` ahora detecta tambien el proceso ssh vivo por patron de linea
+  de comandos (`-R`), aunque el pidfile este desfasado (otro supervisor/lanzador
+  lo arranco); corrige el estado "stopped" con el tunel funcionando.
+- `_cmd_matches()` parsea el `-R` con regex (bind:rport:lhost:lport), tambien
+  cuando el puerto local va al final del comando.
+
 ## v0.2.5 (2026-08-19) — túneles con autossh
 
 - Los túneles SSH usan **autossh** cuando está disponible (`autossh -M 0 -N -T`)

@@ -169,7 +169,10 @@ class SshTunnelProvider:
                 stdout=logf,
                 stderr=logf,
                 stdin=subprocess.DEVNULL,
-                creationflags=sp.CREATE_NO_WINDOW,
+                # DETACHED_PROCESS: desacopla el tunel de la consola del
+                # proceso que lo lanza, para que siga vivo aunque el CLI
+                # 'tunnels start' (o el supervisor) salga.
+                creationflags=sp.DETACHED_PROCESS,
                 env=env,
             )
         except OSError as e:
@@ -213,9 +216,28 @@ class SshTunnelProvider:
         except ValueError:
             return None
 
-    def _kill_by_pattern(self, tunnel: Tunnel) -> None:
-        """Mata procesos ssh.exe cuya linea de comandos contiene -R de este
-        tunnel (destino local + uno de los puertos remotos)."""
+    def _cmd_matches(self, tunnel: Tunnel, cmdline: str) -> bool:
+        """True si la linea de comandos tiene un -R de este tunnel
+        (bind:rport:lhost:lport con rport remoto y lport local)."""
+        if "-R " not in cmdline:
+            return False
+        rports = {b.port for b in tunnel.remote_binds}
+        for m in re.finditer(r"-R\s+\S+", cmdline):
+            spec = m.group(0).split(None, 1)[-1]
+            parts = spec.split(":")
+            if len(parts) >= 4:
+                try:
+                    rport = int(parts[1])
+                    lport = int(parts[3])
+                except ValueError:
+                    continue
+                if rport in rports and lport == tunnel.local_bind.port:
+                    return True
+        return False
+
+    def _matching_ssh_pids(self, tunnel: Tunnel) -> list[int]:
+        """PIDs de procesos ssh.exe vivos cuyo comando coincide con este
+        tunnel (-R <local_port> + uno de los puertos remotos)."""
         try:
             proc = sp.run(
                 ["powershell.exe", "-NoProfile", "-Command",
@@ -225,28 +247,32 @@ class SshTunnelProvider:
                 check=False,
             )
         except OSError:
-            return
+            return []
         if proc.returncode != 0 or not proc.stdout.strip():
-            return
+            return []
         import json as _json
 
         try:
             data = _json.loads(proc.stdout)
         except _json.JSONDecodeError:
-            return
+            return []
         items = data if isinstance(data, list) else [data]
-        targets = {b.port for b in tunnel.remote_binds}
+        pids: list[int] = []
         for item in items:
             cl = str(item.get("CommandLine") or "")
             pid = item.get("ProcessId")
-            if "-R " not in cl or not pid:
-                continue
-            if any(f":{p}:" in cl for p in targets) and \
-               f":{tunnel.local_bind.port}:" in cl:
-                try:
-                    os.kill(int(pid), signal.SIGTERM)
-                except (OSError, ValueError, SystemError):
-                    pass
+            if pid and self._cmd_matches(tunnel, cl):
+                pids.append(int(pid))
+        return pids
+
+    def _kill_by_pattern(self, tunnel: Tunnel) -> None:
+        """Mata procesos ssh.exe cuya linea de comandos contiene -R de este
+        tunnel (destino local + uno de los puertos remotos)."""
+        for pid in self._matching_ssh_pids(tunnel):
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except (OSError, ValueError, SystemError):
+                pass
 
     # -- estado ---------------------------------------------------------------
 
@@ -259,10 +285,11 @@ class SshTunnelProvider:
             self._procs.pop(tunnel.id, None)
             return False
         pid = self._read_pid(tunnel.id)
-        if pid is None:
-            return False
-        alive = self._pid_alive(pid)
-        if alive:
+        if pid is not None and self._pid_alive(pid):
+            return self._gate_ok(tunnel)
+        # Fallback: el tunnel puede haberlo lanzado otra instancia/supervisor
+        # (el pidfile no coincide); comprobar proceso ssh vivo por patron.
+        if self._matching_ssh_pids(tunnel):
             return self._gate_ok(tunnel)
         return False
 
