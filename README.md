@@ -40,7 +40,7 @@
 | Automatización (A2-A3) | Scheduler por días/hora, perfiles de exposición (capture/apply) |
 | Seguridad (13) | Secrets cifrados con DPAPI, redactor de secretos en logs, backups de config, journal en SQLite |
 | Diagnóstico (U7-U8) | `doctor` (detector de problemas), `diag` (bundle sin secretos), `drift` (config vs realidad) |
-| **Panel web (10.5)** | Dashboard HTML en `127.0.0.1:8794` + API JSON `/api/v1`, token opcional, uptime de túneles |
+| **Panel web (10.5)** | Dashboard HTML en `127.0.0.1:8794` + API JSON `/api/v1`, **token obligatorio** (DPAPI), uptime de túneles |
 | **API REST (21)** | `/api/v1` completa con tokens Bearer + scopes read/write/admin, rate limit y auditoría |
 | **MCP (21.4)** | Servidor stdio JSON-RPC (`mcp serve`) con 29 tools mapeadas al CLI |
 | GUI (7) | Tray + ventana con pestañas (requiere extras opcionales) |
@@ -142,7 +142,7 @@ port-forwarder alerts list
 ## Panel web
 
 ```bash
-# Token del panel (recomendado, cifrado DPAPI):
+# Token del panel (OBLIGATORIO, cifrado DPAPI; sin él `web start` no arranca):
 printf 'mi-token' | port-forwarder secrets set web_panel_token
 
 port-forwarder web start                       # dashboard en http://127.0.0.1:8794
@@ -153,7 +153,7 @@ port-forwarder web stop
 port-forwarder web start --bind 0.0.0.0        # exige token configurado
 ```
 
-El dashboard muestra forwards/tunnels con estado en vivo, alertas, uptime de túneles y journal de eventos; permite reaplicar forwards, limpiar, arrancar/detener túneles y activar mantenimiento desde el navegador. API JSON en `/api/v1/*` (Bearer token opcional).
+El dashboard muestra forwards/tunnels con estado en vivo, alertas, uptime de túneles y journal de eventos; permite reaplicar forwards, limpiar, arrancar/detener túneles y activar mantenimiento desde el navegador. API JSON en `/api/v1/*` (Bearer token obligatorio).
 
 > **Seguridad:** los POST del panel exigen `Origin`/`Referer` del mismo host (CSRF).
 > Si automatizas con curl, añade `-H "Origin: http://127.0.0.1:8794"`. El token se
