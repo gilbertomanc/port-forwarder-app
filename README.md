@@ -235,6 +235,61 @@ powershell -ExecutionPolicy Bypass -File scripts\build.ps1
 > .venv\Scripts\python.exe -m PyInstaller --clean --noconfirm scripts\port-forwarder.spec
 > ```
 
+## Desinstalación (completa)
+
+Pasos para quitar **toda** huella de la app en Windows. Ejecuta en PowerShell
+**como administrador** cuando se indique.
+
+1. **Detener la app** (panel web + supervisor y cualquier proceso restante):
+   ```powershell
+   .\port-forwarder.exe web stop          # si está en foreground desde CLI
+   Stop-Process -Name "port-forwarder" -Force -ErrorAction SilentlyContinue
+   Stop-Process -Name "port-forwarder-window" -Force -ErrorAction SilentlyContinue
+   ```
+
+2. **Quitar el autoarranque** (entrada de registro del lanzador `.vbs`):
+   ```powershell
+   Remove-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "PortForwarder" -ErrorAction SilentlyContinue
+   ```
+
+3. **Borrar datos y logs** (config, secrets cifrados con DPAPI, métricas, backups):
+   ```powershell
+   Remove-Item "$env:APPDATA\PortForwarder"      -Recurse -Force
+   Remove-Item "$env:LOCALAPPDATA\PortForwarder" -Recurse -Force
+   ```
+
+4. **Limpiar los forwards aplicados** (si había portproxies/firewall activos):
+   ```powershell
+   .\port-forwarder.exe forwards clear    # requiere admin
+   ```
+
+5. **Borrar los ejecutables** (si usabas los `.exe` compilados):
+   ```powershell
+   Remove-Item ".\ejecutables\port-forwarder"        -Recurse -Force
+   Remove-Item ".\ejecutables\port-forwarder-window" -Recurse -Force
+   ```
+
+6. **Borrar el entorno virtual** (si instalaste desde el código):
+   ```powershell
+   Remove-Item ".\proyectos\port-forwarder-app\.venv" -Recurse -Force
+   ```
+
+7. **Docker** (si lo usaste con contenedor; Docker Desktop en sí es aparte):
+   ```powershell
+   docker compose down --volumes   # desde el repo: borra contenedor, imagen y volumen pf-data
+   ```
+
+8. **Verificar que no queda nada**:
+   ```powershell
+   Get-Process -Name "port-forwarder" -ErrorAction SilentlyContinue              # nada
+   Get-NetTCPConnection -LocalPort 8794,8795,8796 -State Listen -ErrorAction SilentlyContinue  # nada
+   Test-Path "$env:APPDATA\PortForwarder"                                          # False
+   ```
+
+> El código fuente (`proyectos\port-forwarder-app`) y los repos de GitHub se
+> conservan; puedes reinstalar cuando quieras siguiendo la sección
+> [Instalación](#instalación).
+
 ## Contribuir
 
 1. Haz un fork del repositorio.
