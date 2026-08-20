@@ -25,6 +25,7 @@
 - [Tests](#tests)
 - [Estructura del proyecto](#estructura-del-proyecto)
 - [Packaging](#packaging)
+- [Desinstalación (completa)](#desinstalación-completa)
 - [Contribuir](#contribuir)
 - [Licencia](#licencia)
 
