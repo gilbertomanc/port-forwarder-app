@@ -581,7 +581,11 @@ def _build_settings_tab(nb, sup: Supervisor, root) -> None:
         cfg = store.cfg
         web_on = web_var.get()
         web_pw = web_pw_var.get()
-        has_token = bool(cfg.ui.web_panel_token)
+        # El token del panel vive en SecretsStore (DPAPI) o en config (legacy).
+        from src.utils.secrets import SecretsStore
+
+        _sec = SecretsStore()
+        has_token = bool(cfg.ui.web_panel_token) or _sec.check("web_panel_token")
         if web_on and not web_pw and not has_token:
             messagebox.showerror(
                 "Port Forwarding",
@@ -597,7 +601,9 @@ def _build_settings_tab(nb, sup: Supervisor, root) -> None:
         cfg.ui.web_panel_port = web_port
         cfg.ui.web_panel_bind = web_bind_var.get().strip() or "127.0.0.1"
         if web_pw:
-            cfg.ui.web_panel_token = web_pw
+            # La clave se guarda SOLO cifrada (DPAPI) en secrets; nunca en claro.
+            _sec.set("web_panel_token", web_pw)
+            cfg.ui.web_panel_token = ""
 
         mcp_on = mcp_var.get()
         mcp_token = mcp_key_var.get()

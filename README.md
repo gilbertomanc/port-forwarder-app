@@ -14,6 +14,7 @@
 ## Índice
 
 - [Características](#características)
+- [Capturas de la interfaz](#capturas-de-la-interfaz)
 - [Requisitos](#requisitos)
 - [Linux y Docker](#linux-y-docker)
 - [Instalación](#instalación)
@@ -44,6 +45,15 @@
 | **API REST (21)** | `/api/v1` completa con tokens Bearer + scopes read/write/admin, rate limit y auditoría |
 | **MCP (21.4)** | Servidor stdio JSON-RPC (`mcp serve`) con 29 tools mapeadas al CLI |
 | GUI (7) | Tray + ventana con pestañas (requiere extras opcionales) |
+
+## Capturas de la interfaz
+
+| | |
+|---|---|
+| ![Forwards](assets/screenshots/pf-forwards.png) | ![Tunnels](assets/screenshots/pf-tunnels.png) |
+| *Forwards: redirección Windows → WSL (netsh + firewall)* | *Tunnels: túneles SSH hacia VPS con health gate* |
+| ![Logs](assets/screenshots/pf-logs.png) | ![Ajustes](assets/screenshots/pf-ajustes.png) |
+| *Logs: últimas líneas de port-forwarder.log* | *Ajustes: clave del panel web, MCP y API* |
 
 ## Requisitos
 
@@ -144,6 +154,9 @@ port-forwarder alerts list
 ```bash
 # Token del panel (OBLIGATORIO, cifrado DPAPI; sin él `web start` no arranca):
 printf 'mi-token' | port-forwarder secrets set web_panel_token
+
+# También puedes configurarlo desde la app de escritorio:
+# port-forwarder-window -> pestaña Ajustes -> Panel web -> Clave.
 
 port-forwarder web start                       # dashboard en http://127.0.0.1:8794
 port-forwarder web status --json
