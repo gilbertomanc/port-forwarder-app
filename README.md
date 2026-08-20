@@ -152,6 +152,11 @@ port-forwarder tunnels status tunnel-web --json
 > Los **VPS también se gestionan desde la app de escritorio**: pestaña *Tunnels*
 > → sección **Servidores VPS** (listar, nuevo, editar y eliminar), con aviso si
 > un VPS está en uso por túneles.
+>
+> **Keepalive para túneles estables** (evita cortes por NAT/firewall): el cliente
+> ya envía `ServerAliveInterval=30`; el VPS se configura con
+> `ClientAliveInterval 60` / `ClientAliveCountMax 3` / `TCPKeepAlive yes`
+> (incluido en `vps/sshd_config.snippet` y en `vps/install.sh`).
 
 # Supervisión
 port-forwarder supervise                      # supervisor headless (Ctrl+C)

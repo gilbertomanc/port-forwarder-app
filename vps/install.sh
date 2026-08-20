@@ -26,6 +26,9 @@ GatewayPorts yes
 AllowTcpForwarding yes
 PasswordAuthentication no
 AllowUsers tunnel
+ClientAliveInterval 60
+ClientAliveCountMax 3
+TCPKeepAlive yes
 EOF
 
 echo "== Reiniciando sshd =="

@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.4 (2026-08-19) — keepalive SSH para tuneles estables
+
+- Configuracion del VPS (sshd): **ClientAliveInterval 60**,
+  **ClientAliveCountMax 3**, **TCPKeepAlive yes** anadidos a
+  `vps/sshd_config.snippet` y aplicados automaticamente por `vps/install.sh`.
+- Complementa el keepalive del cliente (`ServerAliveInterval=30`) que ya usaba
+  `ssh_tunnel_provider.py`, evitando cortes por NAT/firewall.
+- Para aplicar en un VPS existente: `sudo bash install.sh` o anade el bloque
+  del snippet a `/etc/ssh/sshd_config` y reinicia sshd.
+
 ## v0.2.3 (2026-08-19) — puertos propios (independencia de wsl-manager-gui)
 
 - Los puertos por defecto dejan de chocar con wsl-manager-gui: **panel web

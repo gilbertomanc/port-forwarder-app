@@ -7,7 +7,12 @@ AllowTcpForwarding yes
 PasswordAuthentication no
 AllowUsers tunnel
 
+# Keepalive: evita que los tuneles SSH se caigan por NAT/firewall
+# (el servidor envía una marca cada 60s y cierra sesiones muertas).
+ClientAliveInterval 60
+ClientAliveCountMax 3
+TCPKeepAlive yes
+
 # Hardening adicional recomendado:
 # PermitRootLogin no
 # MaxAuthTries 3
-# ClientAliveInterval 60
