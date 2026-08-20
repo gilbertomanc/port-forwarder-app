@@ -56,6 +56,13 @@ _TUN_COLUMNS = [
     {"text": "Estado", "width": 110},
 ]
 
+_VPS_COLUMNS = [
+    {"text": "ID", "width": 140},
+    {"text": "Host", "width": 220},
+    {"text": "Usuario", "width": 140},
+    {"text": "Puerto", "width": 90},
+]
+
 
 def _theme_for(cfg_theme: str) -> str:
     return {"dark": "darkly", "light": "flatly"}.get(cfg_theme or "", cfg_theme or "darkly")
@@ -212,6 +219,81 @@ def _parse_bind(text: str, what: str) -> Bind:
 def _selected_tunnel_id(table: Tableview) -> str | None:
     rows = table.get_rows(selected=True)
     return str(rows[0].values[0]) if rows else None
+
+
+def _selected_vps_id(table: Tableview) -> str | None:
+    rows = table.get_rows(selected=True)
+    return str(rows[0].values[0]) if rows else None
+
+
+def _edit_vps_gui(root, sup: Supervisor, vps_table: Tableview, refresh) -> None:
+    """Edita un VPS: reusa el formulario de alta precargado con los valores."""
+    from tkinter import messagebox
+
+    store = sup.store
+    vps_id = _selected_vps_id(vps_table)
+    if not vps_id:
+        messagebox.showinfo("Port Forwarding", "Selecciona un VPS", parent=root)
+        return
+    vps = store.get_vps(vps_id)
+    if vps is None:
+        messagebox.showerror("Port Forwarding", f"VPS '{vps_id}' no existe", parent=root)
+        return
+
+    def validate(vars):
+        if not vars["host"].get().strip():
+            raise ValueError("El host es obligatorio")
+        if not vars["user"].get().strip():
+            raise ValueError("El usuario es obligatorio")
+        return True
+
+    dlg = _FormDialog(root, f"Editar VPS '{vps_id}'", [
+        ("host", "Host (IP o dominio)", "entry", tk.StringVar(value=vps.host), None),
+        ("user", "Usuario SSH", "entry", tk.StringVar(value=vps.user), None),
+        ("port", "Puerto SSH", "entry", tk.StringVar(value=str(vps.port or 22)), None),
+        ("identity", "Clave privada (.pem/.key)", "entry", tk.StringVar(value=vps.identity_file or ""), None),
+        ("password", "Contrasena SSH (alternativa a la clave)", "entry", tk.StringVar(), {"mask": True}),
+    ], validate=validate)
+    root.wait_window(dlg)
+    if not dlg.result:
+        return
+    r = dlg.result
+    try:
+        vps.host = r["host"].strip()
+        vps.user = r["user"].strip()
+        vps.port = int(r["port"] or 22)
+        vps.identity_file = r["identity"].strip() or ""
+        if r["password"]:
+            vps.password = r["password"]
+    except ValueError:
+        messagebox.showerror("Editar VPS", "Puerto invalido", parent=root)
+        return
+    try:
+        store.save()
+    except Exception as e:  # noqa: BLE001
+        messagebox.showerror("Editar VPS", str(e), parent=root)
+        return
+    refresh()
+    messagebox.showinfo("Editar VPS", f"VPS '{vps_id}' actualizado.", parent=root)
+
+
+def _remove_vps_gui(root, sup: Supervisor, vps_table: Tableview, refresh) -> None:
+    from tkinter import messagebox
+
+    store = sup.store
+    vps_id = _selected_vps_id(vps_table)
+    if not vps_id:
+        messagebox.showinfo("Port Forwarding", "Selecciona un VPS", parent=root)
+        return
+    if not messagebox.askyesno("Port Forwarding", f"Eliminar VPS '{vps_id}'?", parent=root):
+        return
+    try:
+        store.remove_vps(vps_id)
+    except Exception as e:  # noqa: BLE001
+        messagebox.showerror("Eliminar VPS", str(e), parent=root)
+        return
+    refresh()
+    messagebox.showinfo("Eliminar VPS", f"VPS '{vps_id}' eliminado.", parent=root)
 
 
 def _add_vps_gui(root, sup: Supervisor, refresh) -> None:
@@ -728,8 +810,6 @@ def _open_window(sup: Supervisor, close_to_tray: bool | None = None) -> None:
     tun_bar.pack(fill="x", padx=6, pady=6)
     ttk.Button(tun_bar, text="Nuevo tunnel...", bootstyle="info",
                command=lambda: _add_tunnel_gui(root, sup, _refresh)).pack(side="left", padx=2)
-    ttk.Button(tun_bar, text="Nuevo VPS...", bootstyle="secondary",
-               command=lambda: _add_vps_gui(root, sup, _refresh)).pack(side="left", padx=2)
     ttk.Button(tun_bar, text="Iniciar", bootstyle="success",
                command=lambda: _tunnel_action(sup, "start", tun_table, _refresh)).pack(side="left", padx=2)
     ttk.Button(tun_bar, text="Detener", bootstyle="warning",
@@ -737,6 +817,20 @@ def _open_window(sup: Supervisor, close_to_tray: bool | None = None) -> None:
     ttk.Button(tun_bar, text="Eliminar", bootstyle="danger",
                command=lambda: _tunnel_action(sup, "remove", tun_table, _refresh)).pack(side="left", padx=2)
     tun_table = _make_table(tun_tab, _TUN_COLUMNS)
+
+    # --- seccion VPS ----------------------------------------------------------
+    vps_frame = ttk.Frame(tun_tab)
+    vps_frame.pack(fill="both", expand=True, padx=6, pady=(12, 6))
+    vps_bar = ttk.Frame(vps_frame)
+    vps_bar.pack(fill="x")
+    ttk.Label(vps_bar, text="Servidores VPS", style="Header.TLabel").pack(side="left", padx=(0, 10))
+    ttk.Button(vps_bar, text="Nuevo VPS...", bootstyle="info",
+               command=lambda: _add_vps_gui(root, sup, _refresh)).pack(side="left", padx=2)
+    ttk.Button(vps_bar, text="Editar...", bootstyle="secondary",
+               command=lambda: _edit_vps_gui(root, sup, vps_table, _refresh)).pack(side="left", padx=2)
+    ttk.Button(vps_bar, text="Eliminar", bootstyle="danger",
+               command=lambda: _remove_vps_gui(root, sup, vps_table, _refresh)).pack(side="left", padx=2)
+    vps_table = _make_table(vps_frame, _VPS_COLUMNS)
     # --- pestana Logs ---------------------------------------------------------
     log_tab = ttk.Frame(nb)
     nb.add(log_tab, text="Logs")
@@ -795,6 +889,12 @@ def _open_window(sup: Supervisor, close_to_tray: bool | None = None) -> None:
         ]
         _preserve_and_rebuild(tun_table, _TUN_COLUMNS, tun_rows)
         _recolor(tun_table, 5)
+
+        vps_rows = [
+            [v.id, v.host, v.user, str(v.port or 22)]
+            for v in sup.store.cfg.vps_list
+        ]
+        _preserve_and_rebuild(vps_table, _VPS_COLUMNS, vps_rows)
 
         fwd_ok = sum(1 for f in status["forwards"] if f["state"] == "ok")
         tun_ok = sum(1 for t in status["tunnels"] if t["state"] == "running")

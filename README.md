@@ -51,7 +51,7 @@
 | | |
 |---|---|
 | ![Forwards](assets/screenshots/pf-forwards.png) | ![Tunnels](assets/screenshots/pf-tunnels.png) |
-| *Forwards: redirección Windows → WSL (netsh + firewall)* | *Tunnels: túneles SSH hacia VPS con health gate* |
+| *Forwards: redirección Windows → WSL (netsh + firewall)* | *Tunnels: túneles SSH hacia VPS + gestión de servidores VPS (nuevo/editar/eliminar)* |
 | ![Logs](assets/screenshots/pf-logs.png) | ![Ajustes](assets/screenshots/pf-ajustes.png) |
 | *Logs: últimas líneas de port-forwarder.log* | *Ajustes: clave del panel web, MCP y API* |
 
@@ -147,6 +147,11 @@ port-forwarder vps add --id vps-main --host vps.example.com --user tunnel --iden
 port-forwarder tunnels add --id tunnel-web --vps vps-main --local 127.0.0.1:8080 --remote 0.0.0.0:80
 port-forwarder tunnels start tunnel-web
 port-forwarder tunnels status tunnel-web --json
+```
+
+> Los **VPS también se gestionan desde la app de escritorio**: pestaña *Tunnels*
+> → sección **Servidores VPS** (listar, nuevo, editar y eliminar), con aviso si
+> un VPS está en uso por túneles.
 
 # Supervisión
 port-forwarder supervise                      # supervisor headless (Ctrl+C)
