@@ -39,7 +39,8 @@ def cmd_health(args: argparse.Namespace) -> int:
     store, netsh, metrics = _ctx(args)
     from src.providers.ssh_tunnel_provider import SshTunnelProvider
 
-    ssh = SshTunnelProvider(ssh_exe=store.cfg.windows.ssh_exe or None)
+    ssh = SshTunnelProvider(ssh_exe=store.cfg.windows.ssh_exe or None,
+                            autossh_exe=store.cfg.windows.autossh_exe or None)
     data: dict = {"forwards": [], "tunnels": [], "vps": []}
 
     for f in store.cfg.forwards:

@@ -154,9 +154,14 @@ port-forwarder tunnels status tunnel-web --json
 > un VPS está en uso por túneles.
 >
 > **Keepalive para túneles estables** (evita cortes por NAT/firewall): el cliente
-> ya envía `ServerAliveInterval=30`; el VPS se configura con
-> `ClientAliveInterval 60` / `ClientAliveCountMax 3` / `TCPKeepAlive yes`
-> (incluido en `vps/sshd_config.snippet` y en `vps/install.sh`).
+> lanza **autossh** (si está instalado) con `-M 0 -o ServerAliveInterval=30 -o
+> ServerAliveCountMax=3 -o TCPKeepAlive=yes -o ExitOnForwardFailure=yes -o
+> ConnectTimeout=10`; si no hay autossh, usa `ssh` con las mismas opciones. En el
+> VPS se configura `ClientAliveInterval 60` / `ClientAliveCountMax 3` /
+> `TCPKeepAlive yes` (incluido en `vps/sshd_config.snippet` y `vps/install.sh`).
+>
+> Para forzar/indicar autossh: `config.json` → `windows.autossh_exe` (ruta al
+> binario). Instalación: `scripts/install_autossh.sh` (en WSL/Linux).
 
 # Supervisión
 port-forwarder supervise                      # supervisor headless (Ctrl+C)

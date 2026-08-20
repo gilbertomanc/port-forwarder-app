@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.5 (2026-08-19) — túneles con autossh
+
+- Los túneles SSH usan **autossh** cuando está disponible (`autossh -M 0 -N -T`)
+  con `ServerAliveInterval=30`, `ServerAliveCountMax=3`, `TCPKeepAlive=yes`,
+  `ExitOnForwardFailure=yes` y `ConnectTimeout=10`; si no hay autossh, se usa
+  `ssh` con las mismas opciones.
+- Nueva config `windows.autossh_exe` para indicar la ruta al binario (auto-
+  detección si está vacío). `SshTunnelProvider(use_autossh=...)` permite forzar.
+- Tests: `test_build_command_with_autossh` y opciones de keepalive verificadas.
+
 ## v0.2.4 (2026-08-19) — keepalive SSH para tuneles estables
 
 - Configuracion del VPS (sshd): **ClientAliveInterval 60**,

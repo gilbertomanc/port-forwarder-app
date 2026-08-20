@@ -46,7 +46,8 @@ class AppService:
                 netsh_exe=self.store.cfg.windows.netsh_exe or None
             )
             wsl = WslIpProvider(wsl_exe=self.store.cfg.windows.wsl_exe or None)
-            ssh = SshTunnelProvider(ssh_exe=self.store.cfg.windows.ssh_exe or None)
+            ssh = SshTunnelProvider(ssh_exe=self.store.cfg.windows.ssh_exe or None,
+                                    autossh_exe=self.store.cfg.windows.autossh_exe or None)
             metrics = MetricsStore()
             self.supervisor = Supervisor(
                 self.store, netsh=netsh, wsl=wsl, ssh=ssh, metrics=metrics

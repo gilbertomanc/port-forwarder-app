@@ -32,7 +32,8 @@ def make_vps():
 def make_provider(tmp_path):
     return SshTunnelProvider(ssh_exe=r"C:\Windows\System32\OpenSSH\ssh.exe",
                              pid_dir=tmp_path / "pids",
-                             log_dir=tmp_path / "logs")
+                             log_dir=tmp_path / "logs",
+                             use_autossh=False)
 
 
 def test_build_command_single_remote(tmp_path):
@@ -45,7 +46,25 @@ def test_build_command_single_remote(tmp_path):
     assert "tunnel@vps.example.com" in cmd
     assert "ServerAliveInterval=30" in cmd
     assert "ServerAliveCountMax=3" in cmd
+    assert "TCPKeepAlive=yes" in cmd
+    assert "ConnectTimeout=10" in cmd
     assert "-p" in cmd and "22" in cmd
+
+
+def test_build_command_with_autossh(tmp_path):
+    """Con autossh se usa 'autossh -M 0' + las mismas opciones de keepalive."""
+    p = SshTunnelProvider(ssh_exe=r"C:\Windows\System32\OpenSSH\ssh.exe",
+                          pid_dir=tmp_path / "pids",
+                          log_dir=tmp_path / "logs",
+                          autossh_exe=r"C:\tools\autossh.exe",
+                          use_autossh=True)
+    cmd = p.build_command(make_tunnel(), make_vps())
+    assert cmd[0].endswith("autossh.exe")
+    assert cmd[1:3] == ["-M", "0"]
+    assert "-T" in cmd
+    assert "TCPKeepAlive=yes" in cmd
+    assert "ServerAliveInterval=30" in cmd
+    assert "-R" in cmd
 
 
 def test_build_command_with_password(tmp_path):

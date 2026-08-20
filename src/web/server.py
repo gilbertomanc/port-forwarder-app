@@ -280,7 +280,8 @@ class WebPanel:
         from src.providers.ssh_tunnel_provider import SshTunnelProvider
 
         store = self.supervisor.store
-        ssh = SshTunnelProvider(ssh_exe=store.cfg.windows.ssh_exe or None)
+        ssh = SshTunnelProvider(ssh_exe=store.cfg.windows.ssh_exe or None,
+                                autossh_exe=store.cfg.windows.autossh_exe or None)
         data: dict[str, Any] = {"forwards": [], "tunnels": [], "vps": []}
         for f in store.cfg.forwards:
             ok = self.supervisor.netsh.test_connection(f.listen_port, 2.0)

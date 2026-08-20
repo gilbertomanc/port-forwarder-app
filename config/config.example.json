@@ -2,6 +2,7 @@
   "version": 2,
   "windows": {
     "ssh_exe": "C:\\Windows\\System32\\OpenSSH\\ssh.exe",
+    "autossh_exe": "",
     "netsh_exe": "C:\\Windows\\System32\\netsh.exe",
     "wsl_exe": "C:\\Windows\\System32\\wsl.exe"
   },

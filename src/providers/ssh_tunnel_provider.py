@@ -1,10 +1,12 @@
 """SshTunnelProvider: tunnels SSH reversos hacia VPS (seccion 9 del plan).
 
-Comando (9.2, multi-puerto T4):
-  ssh -i <identity> -N -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \\
-      -o ExitOnForwardFailure=yes -R 0.0.0.0:80:127.0.0.1:3000 \\
-      -R 0.0.0.0:443:127.0.0.1:3000 user@vps
+Comando (9.2, multi-puerto T4), con autossh si esta disponible:
+  autossh -M 0 -N -T -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \\
+      -o TCPKeepAlive=yes -o ExitOnForwardFailure=yes -o ConnectTimeout=10 \\
+      -R 0.0.0.0:80:127.0.0.1:3000 -R 0.0.0.0:443:127.0.0.1:3000 user@vps
 
+- autossh se usa automaticamente si esta en el PATH (o si se indica
+  `windows.autossh_exe`); si no, cae a `ssh` (mismo keepalive).
 - start(): Popen sin ventana, stdout/stderr a archivo por tunnel en logs_dir.
 - stop(): terminate -> kill; fallback: matar procesos ssh con el mismo
   patron de linea de comandos (tunnels huerfanos).
@@ -16,6 +18,7 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
 import signal
 import socket
 import subprocess
@@ -39,6 +42,8 @@ class SshTunnelProvider:
         ssh_exe: str | None = None,
         pid_dir: str | Path | None = None,
         log_dir: str | Path | None = None,
+        autossh_exe: str | None = None,
+        use_autossh: bool | None = None,
     ) -> None:
         import sys as _sys
 
@@ -46,6 +51,8 @@ class SshTunnelProvider:
             ssh_exe = (r"C:\Windows\System32\OpenSSH\ssh.exe"
                        if _sys.platform == "win32" else "ssh")
         self.ssh_exe = ssh_exe
+        self.autossh_exe = (autossh_exe or "").strip()
+        self.use_autossh = use_autossh  # None = auto-detectar
         from src.utils import path as paths
 
         self.pid_dir = Path(pid_dir) if pid_dir else paths.data_dir() / "tunnels"
@@ -53,6 +60,20 @@ class SshTunnelProvider:
         self.log_dir = Path(log_dir) if log_dir else paths.logs_dir()
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self._procs: dict[str, subprocess.Popen] = {}
+
+    # -- autossh / ssh ---------------------------------------------------------
+
+    def _autossh_bin(self) -> str | None:
+        """Devuelve la ruta de autossh a usar, o None si no hay."""
+        if self.autossh_exe:
+            return self.autossh_exe
+        found = shutil.which("autossh")
+        return found
+
+    def _use_autossh(self) -> bool:
+        if self.use_autossh is not None:
+            return bool(self.use_autossh)
+        return self._autossh_bin() is not None
 
     # -- construccion del comando (visible para tests, 9.1) -------------------
 
@@ -101,12 +122,17 @@ class SshTunnelProvider:
         if vps is None:
             raise SshTunnelError(f"tunnel '{tunnel.id}': VPS desconocido")
 
-        cmd = [
-            self.ssh_exe,
+        if self._use_autossh():
+            cmd = [self._autossh_bin() or "autossh", "-M", "0"]
+        else:
+            cmd = [self.ssh_exe]
+        cmd += [
             "-i", vps.identity_file or os.path.expanduser("~/.ssh/id_ed25519"),
             "-N",
+            "-T",
             "-o", f"ServerAliveInterval={tunnel.keepalive_interval}",
             "-o", f"ServerAliveCountMax={tunnel.keepalive_count}",
+            "-o", "TCPKeepAlive=yes",
             "-o", "ExitOnForwardFailure=yes",
             "-o", "StrictHostKeyChecking=accept-new",
             "-o", "ConnectTimeout=10",

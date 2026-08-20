@@ -188,6 +188,7 @@ class Webhook:
 @dataclass
 class WindowsCfg:
     ssh_exe: str = ""
+    autossh_exe: str = ""  # opcional: ruta a autossh (si vacio, se auto-detecta)
     netsh_exe: str = ""
     wsl_exe: str = ""
 

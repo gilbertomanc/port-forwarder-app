@@ -14,7 +14,8 @@ from src.providers.ssh_tunnel_provider import SshTunnelError, SshTunnelProvider
 
 def _ctx(args: argparse.Namespace):
     store = ConfigStore()
-    ssh = SshTunnelProvider(ssh_exe=store.cfg.windows.ssh_exe or None)
+    ssh = SshTunnelProvider(ssh_exe=store.cfg.windows.ssh_exe or None,
+                            autossh_exe=store.cfg.windows.autossh_exe or None)
     metrics = MetricsStore()
     return store, ssh, metrics
 
