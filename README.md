@@ -187,6 +187,9 @@ port-forwarder api tokens list
 port-forwarder api serve                       # corre la API en foreground
 ```
 
+> El token también se puede crear desde la app de escritorio
+> (`port-forwarder-window` → Ajustes → API REST → Generar token API).
+
 Endpoints en `http://127.0.0.1:8795/api/v1` (tabla completa en el plan, 21.3): `status`, `forwards` (CRUD/apply/clear/test/conflicts), `tunnels` (CRUD/start/stop/restart), `vps`, `health`, `alerts`, `schedule`, `profiles`, `maintenance`, `drift`, `secrets/check`, `doctor`. Scopes: `read` < `write` < `admin` (destructivos exigen `?confirm=1`). Rate limit 120 req/min read, 30 write. Auditoría de cada llamada en SQLite.
 
 ## MCP (agentes LLM)
