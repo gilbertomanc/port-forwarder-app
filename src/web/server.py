@@ -555,7 +555,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
 <script>
 let TOKEN = localStorage.getItem('pf_token') || '';
-if (TOKEN) askToken();
+if (!TOKEN) askToken();
 
 // Escape XSS (H2): toda interpolacion a innerHTML pasa por esc().
 function esc(v){ const d=document.createElement('div');

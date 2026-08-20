@@ -55,6 +55,12 @@
 | ![Logs](assets/screenshots/pf-logs.png) | ![Ajustes](assets/screenshots/pf-ajustes.png) |
 | *Logs: últimas líneas de port-forwarder.log* | *Ajustes: clave del panel web, MCP y API* |
 
+### Panel web (http://127.0.0.1:8794)
+
+![Panel web de Port Forwarding](assets/screenshots/web-pf.png)
+
+*Dashboard web con estado de forwards/túneles, uptime, alertas y eventos. Requiere el token configurado en Ajustes o con `secrets set web_panel_token`.*
+
 ## Requisitos
 
 - **Windows 10/11** con `netsh.exe`, `ssh.exe` y `wsl.exe` (System32).
