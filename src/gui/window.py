@@ -48,12 +48,13 @@ _FWD_COLUMNS = [
 ]
 
 _TUN_COLUMNS = [
-    {"text": "ID", "width": 140},
-    {"text": "Tipo", "width": 90},
-    {"text": "VPS", "width": 120},
-    {"text": "Local", "width": 150},
-    {"text": "Remoto", "width": 200},
-    {"text": "Estado", "width": 110},
+    {"text": "ID", "width": 130},
+    {"text": "Tipo", "width": 80},
+    {"text": "VPS", "width": 110},
+    {"text": "Local", "width": 140},
+    {"text": "Remoto", "width": 180},
+    {"text": "Estado", "width": 100},
+    {"text": "Tráfico", "width": 170},
 ]
 
 _VPS_COLUMNS = [
@@ -868,12 +869,40 @@ def _open_window(sup: Supervisor, close_to_tray: bool | None = None) -> None:
                 table.view.see(iid)
 
     def _refresh() -> None:
-        bg.submit(lambda: sup.status(), _on_status)
+        bg.submit(_work, _on_status)
 
-    def _on_status(status, err) -> None:
-        if err is not None or status is None:
+    def _work():
+        st = sup.status()
+        tr: dict[str, dict] = {}
+        for t in sup.store.cfg.tunnels:
+            try:
+                if sup.ssh.is_alive(t):
+                    tf = sup.ssh.traffic(t, sup.store.get_vps(t.vps_id))
+                    if tf:
+                        tr[t.id] = tf
+            except Exception:  # noqa: BLE001
+                continue
+        return st, tr
+
+    def _fmt_bytes(n: int) -> str:
+        n = float(n or 0)
+        for unit in ("B", "KB", "MB", "GB", "TB"):
+            if n < 1024 or unit == "TB":
+                return f"{n:.1f} {unit}"
+            n /= 1024
+        return f"{n:.1f} TB"
+
+    def _fmt_traffic(tf: dict) -> str:
+        if not tf:
+            return "-"
+        return (f"rx {_fmt_bytes(tf['rx_bytes'])} · tx {_fmt_bytes(tf['tx_bytes'])}"
+                f"  ↓{_fmt_bytes(tf['rx_rate_bps'])}/s ↑{_fmt_bytes(tf['tx_rate_bps'])}/s")
+
+    def _on_status(result, err) -> None:
+        if err is not None or result is None:
             status_var.set(f"error: {err}")
             return
+        status, traffic = result
         fwd_rows = [
             [f["id"], str(f["listen_port"]), f["wsl_distro"], str(f["wsl_port"]),
              f.get("ip") or "-", f["state"]]
@@ -884,7 +913,7 @@ def _open_window(sup: Supervisor, close_to_tray: bool | None = None) -> None:
 
         tun_rows = [
             [t["id"], t["type"], t["vps_id"], t["local"],
-             ", ".join(t["remote"]), t["state"]]
+             ", ".join(t["remote"]), t["state"], _fmt_traffic(traffic.get(t["id"]))]
             for t in status["tunnels"]
         ]
         _preserve_and_rebuild(tun_table, _TUN_COLUMNS, tun_rows)

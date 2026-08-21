@@ -41,6 +41,19 @@ def cmd_status(args: argparse.Namespace) -> int:
     data = sup.status()
     data["config_path"] = str(paths.config_path())
     data["version"] = 2
+    traffic_by_id: dict[str, dict] = {}
+    for t in store.cfg.tunnels:
+        try:
+            if ssh.is_alive(t):
+                tf = ssh.traffic(t, store.get_vps(t.vps_id))
+                if tf:
+                    traffic_by_id[t.id] = tf
+        except Exception:  # noqa: BLE001
+            continue
+    for tun in data.get("tunnels", []):
+        tf = traffic_by_id.get(tun["id"])
+        if tf:
+            tun["traffic"] = tf
     if getattr(args, "json", False):
         _json_out(data)
     else:
@@ -52,9 +65,27 @@ def cmd_status(args: argparse.Namespace) -> int:
             print(f"  fwd {f['id']:<16} :{f['listen_port']:<6} "
                   f"{f['state']:<8} ip={f['ip'] or '-'}")
         for t in data["tunnels"]:
-            print(f"  tun {t['id']:<16} {t['state']:<10} "
-                  f"local={t['local']} remote={','.join(t['remote'])}")
+            line = (f"  tun {t['id']:<16} {t['state']:<10} "
+                    f"local={t['local']} remote={','.join(t['remote'])}")
+            tf = t.get("traffic")
+            if tf:
+                line += (f"  [rx {_fmt_bytes(tf['rx_bytes'])} tx {_fmt_bytes(tf['tx_bytes'])}"
+                         f" · ↓{_fmt_rate(tf['rx_rate_bps'])} ↑{_fmt_rate(tf['tx_rate_bps'])}]")
+            print(line)
     return 0
+
+
+def _fmt_bytes(n: int) -> str:
+    n = float(n)
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if n < 1024 or unit == "TB":
+            return f"{n:.1f} {unit}"
+        n /= 1024
+    return f"{n:.1f} TB"
+
+
+def _fmt_rate(bps: int) -> str:
+    return f"{_fmt_bytes(int(bps))}/s"
 
 
 def cmd_secrets(args: argparse.Namespace) -> int:

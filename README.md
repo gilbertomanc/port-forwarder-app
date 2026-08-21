@@ -37,7 +37,7 @@
 | Forwards (F1-F8, F14) | CRUD, aplicar/limpiar (netsh + firewall), test TCP, detector de conflictos, clone |
 | Tunnels (T1-T6) | SSH reverse multi-puerto, start/stop/restart, health gate, latency, clone |
 | Supervisor (12.3) | Loop único: IPs WSL cambian → reaplica; tunnel muerto → backoff + restart; health gate pausa forwards sin servicio |
-| Monitoring (M3-M6) | Health checks, alertas (SQLite), portmap, conexiones activas |
+| Monitoring (M3-M6) | Health checks, alertas (SQLite), portmap, conexiones activas, **tráfico por túnel** (bytes acumulados + velocidad) |
 | Automatización (A2-A3) | Scheduler por días/hora, perfiles de exposición (capture/apply) |
 | Seguridad (13) | Secrets cifrados con DPAPI, redactor de secretos en logs, backups de config, journal en SQLite |
 | Diagnóstico (U7-U8) | `doctor` (detector de problemas), `diag` (bundle sin secretos), `drift` (config vs realidad) |
@@ -146,7 +146,7 @@ port-forwarder forwards conflicts 8080
 port-forwarder vps add --id vps-main --host vps.example.com --user tunnel --identity "%USERPROFILE%\.ssh\wsl-manager-main"
 port-forwarder tunnels add --id tunnel-web --vps vps-main --local 127.0.0.1:8080 --remote 0.0.0.0:80
 port-forwarder tunnels start tunnel-web
-port-forwarder tunnels status tunnel-web --json
+port-forwarder tunnels status tunnel-web --json   # incluye "traffic" (rx/tx + velocidad)
 ```
 
 > Los **VPS también se gestionan desde la app de escritorio**: pestaña *Tunnels*

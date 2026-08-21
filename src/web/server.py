@@ -260,12 +260,24 @@ class WebPanel:
     def state(self) -> dict[str, Any]:
         st = self.supervisor.status()
         uptime: dict[str, Any] = {}
+        traffic: dict[str, Any] = {}
         for t in st["tunnels"]:
             uptime[t["id"]] = self.metrics.tunnel_uptime_summary(t["id"])
+            if t.get("state") == "running":
+                tun = self.supervisor.store.get_tunnel(t["id"])
+                if tun is not None:
+                    try:
+                        vps = self.supervisor.store.get_vps(tun.vps_id)
+                        tf = self.supervisor.ssh.traffic(tun, vps)
+                        if tf:
+                            traffic[t["id"]] = tf
+                    except Exception:  # noqa: BLE001
+                        pass
         return {
             "ok": True,
             "status": st,
             "uptime": uptime,
+            "traffic": traffic,
             "alerts": self.metrics.list_alerts(state="open", limit=20),
             "ts": time.time(),
         }

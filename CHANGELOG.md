@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.7 (2026-08-19) — trafico por tunnel
+
+- **Medicion de trafico por tunnel**: bytes acumulados (rx/tx) y velocidad
+  actual, leidos desde la sesion SSH en el propio VPS (`ss -tin`) y acumulados
+  localmente (persistidos en `data_dir/tunnels/<id>.traffic.json`).
+  Windows no expone contadores de red por proceso; el VPS es quien transporta
+  el trafico del tunnel.
+- Visible en `tunnels status --json` y `status --json`, en el panel web
+  (`/api/v1/state` → `traffic`) y en la ventana (columna "Tráfico" de Tunnels).
+- El supervisor muestrea cada ciclo; el CLI y la GUI muestran el dato al
+  consultar. Requiere acceso SSH al VPS (ya usado por la app).
+
 ## v0.2.6 (2026-08-19) — tuneles SSH estables
 
 - Los tuneles se lanzan con `DETACHED_PROCESS`: sobreviven aunque el CLI

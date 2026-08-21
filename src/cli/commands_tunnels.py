@@ -217,13 +217,34 @@ def _status(store: ConfigStore, ssh: SshTunnelProvider,
         "alive": alive,
         "state": "running" if alive else "stopped",
     }
+    if alive:
+        tf = ssh.traffic(tun, store.get_vps(tun.vps_id))
+        if tf:
+            data["traffic"] = tf
     if getattr(args, "json", False):
         _json_out(data)
     else:
         print(f"tunnel {tun.id}: {'CORRIENDO' if alive else 'detenido'}")
         print(f"  vps:   {tun.vps_id}  local: {tun.ssh_dest}")
         print(f"  bind:  {', '.join(data['remote'])}")
+        if "traffic" in data:
+            t = data["traffic"]
+            print(f"  trafico: rx {_fmt_bytes(t['rx_bytes'])} / tx {_fmt_bytes(t['tx_bytes'])}"
+                  f"  |  vel: ↓{_fmt_rate(t['rx_rate_bps'])} ↑{_fmt_rate(t['tx_rate_bps'])}")
     return 0 if alive else 1
+
+
+def _fmt_bytes(n: int) -> str:
+    n = float(n)
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if n < 1024 or unit == "TB":
+            return f"{n:.1f} {unit}"
+        n /= 1024
+    return f"{n:.1f} TB"
+
+
+def _fmt_rate(bps: int) -> str:
+    return f"{_fmt_bytes(int(bps))}/s"
 
 
 def _latency(store: ConfigStore, ssh: SshTunnelProvider,

@@ -124,6 +124,7 @@ class Supervisor:
             try:
                 self._maybe_reload_config()
                 self.run_once()
+                self._sample_traffic()
             except Exception:
                 import logging
 
@@ -132,6 +133,17 @@ class Supervisor:
                 )
             self.last_cycle = self.clock()
             self._stop_ev.wait(self.interval)
+
+    def _sample_traffic(self) -> None:
+        """Acumula el trafico (bytes) de los tunnels vivos cada ciclo."""
+        if not hasattr(self.ssh, "traffic"):
+            return
+        for t in self.store.cfg.tunnels:
+            try:
+                if self.ssh.is_alive(t):
+                    self.ssh.traffic(t, self.store.get_vps(t.vps_id))
+            except Exception:  # noqa: BLE001 - no debe romper el loop
+                continue
 
     # -- config externa ---------------------------------------------------------
 

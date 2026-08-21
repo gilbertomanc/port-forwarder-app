@@ -314,6 +314,109 @@ class SshTunnelProvider:
         except OSError:
             return False
 
+    # -- trafico por tunnel ----------------------------------------------------
+
+    def _traffic_file(self, tunnel_id: str) -> Path:
+        return self.pid_dir / f"{tunnel_id}.traffic.json"
+
+    def _vps_session_bytes(self, vps: Vps) -> tuple[int, int] | None:
+        """(rx, tx) acumulados de las sesiones sshd del tunnel en el VPS.
+
+        Windows no expone contadores de red por proceso, asi que se leen los
+        bytes acumulados de la sesion SSH en el propio VPS (ss -tin), que es
+        quien transporta todo el trafico del tunnel.
+        """
+        import re as _re
+
+        extra = self._password_env(vps)
+        env = dict(os.environ, **(extra or {}))
+        script = f"ss -tin state established sport = :{vps.port} 2>/dev/null"
+        cmd = [
+            self.ssh_exe, "-p", str(vps.port),
+            "-o", "StrictHostKeyChecking=accept-new",
+            "-o", "ConnectTimeout=10",
+            "-o", "PreferredAuthentications=password,keyboard-interactive",
+            f"{vps.user}@{vps.host}", script,
+        ]
+        try:
+            proc = sp.run(cmd, env=env, timeout=25.0, check=False)
+        except OSError:
+            return None
+        out = proc.stdout or ""
+        rx = tx = 0
+        for m in _re.finditer(r"bytes_sent:(\d+)[^\n]*bytes_received:(\d+)", out):
+            tx += int(m.group(1))
+            rx += int(m.group(2))
+        if rx == 0 and tx == 0:
+            return None
+        return rx, tx
+
+    def traffic(self, tunnel: Tunnel, vps: Vps | None = None) -> dict | None:
+        """Bytes acumulados del tunnel (persistidos) + velocidad actual (B/s).
+
+        Se leen los bytes acumulados de la sesion SSH en el VPS (ss -tin) y se
+        acumulan localmente entre muestras para el total y la velocidad.
+        Persistido en data_dir/tunnels/<id>.traffic.json.
+        """
+        import json as _json
+        import time as _time
+
+        if vps is None:
+            return None
+        stats_path = self._traffic_file(tunnel.id)
+        stats: dict = {
+            "rx_total": 0, "tx_total": 0,
+            "prev_vps_rx": 0, "prev_vps_tx": 0, "last_ts": None,
+        }
+        if stats_path.exists():
+            try:
+                stats.update(_json.loads(stats_path.read_text(encoding="utf-8")))
+            except (OSError, ValueError):
+                pass
+
+        pair = self._vps_session_bytes(vps)
+        if pair is None:
+            try:
+                stats_path.write_text(_json.dumps(stats), encoding="utf-8")
+            except OSError:
+                pass
+            return {
+                "rx_bytes": int(stats.get("rx_total", 0)),
+                "tx_bytes": int(stats.get("tx_total", 0)),
+                "rx_rate_bps": 0,
+                "tx_rate_bps": 0,
+            }
+
+        rx, tx = pair
+        prev_rx = int(stats.get("prev_vps_rx", 0))
+        prev_tx = int(stats.get("prev_vps_tx", 0))
+        now = _time.time()
+        last = stats.get("last_ts")
+        dt = (now - float(last)) if last else None
+
+        # Delta respecto al muestreo anterior. Si la sesion se reinicio
+        # (el acumulado cae), contar los bytes de la nueva sesion.
+        d_rx = max(0, rx - prev_rx) if rx >= prev_rx else rx
+        d_tx = max(0, tx - prev_tx) if tx >= prev_tx else tx
+
+        stats["rx_total"] = int(stats.get("rx_total", 0)) + d_rx
+        stats["tx_total"] = int(stats.get("tx_total", 0)) + d_tx
+        rx_rate = int(d_rx / dt) if dt and dt > 0 else 0
+        tx_rate = int(d_tx / dt) if dt and dt > 0 else 0
+        stats["prev_vps_rx"] = rx
+        stats["prev_vps_tx"] = tx
+        stats["last_ts"] = now
+        try:
+            stats_path.write_text(_json.dumps(stats), encoding="utf-8")
+        except OSError:
+            pass
+        return {
+            "rx_bytes": int(stats["rx_total"]),
+            "tx_bytes": int(stats["tx_total"]),
+            "rx_rate_bps": rx_rate,
+            "tx_rate_bps": tx_rate,
+        }
+
     def restart(self, tunnel: Tunnel, vps: Vps | None = None) -> subprocess.Popen:
         self.stop(tunnel)
         time.sleep(0.5)

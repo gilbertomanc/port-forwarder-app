@@ -79,6 +79,45 @@ def test_cmd_matches_detects_r_forward(tmp_path):
     assert not p._cmd_matches(tun, other_local)
 
 
+def test_traffic_accumulates_via_vps(tmp_path, monkeypatch):
+    """El trafico acumula bytes desde los contadores de la sesion SSH en el VPS."""
+    import time
+
+    p = make_provider(tmp_path)
+    tun = make_tunnel()
+    vps = make_vps()
+    calls = iter([(1000, 500), (2100, 1050)])  # 2 muestras: delta 1100/550
+    monkeypatch.setattr(p, "_vps_session_bytes", lambda v: next(calls))
+
+    t1 = p.traffic(tun, vps)
+    assert t1["rx_bytes"] == 1000
+    assert t1["tx_bytes"] == 500
+    assert t1["rx_rate_bps"] == 0  # primera muestra: sin dt
+    time.sleep(1.0)
+    t2 = p.traffic(tun, vps)
+    assert 1900 <= t2["rx_bytes"] <= 2300   # acumulado ~2100
+    assert 900 <= t2["tx_bytes"] <= 1200
+    assert 900 <= t2["rx_rate_bps"] <= 1300
+    assert p._traffic_file(tun.id).exists()
+
+
+def test_traffic_sin_vps(tmp_path):
+    p = make_provider(tmp_path)
+    assert p.traffic(make_tunnel(), None) is None
+
+
+def test_traffic_sin_sesiones(tmp_path, monkeypatch):
+    p = make_provider(tmp_path)
+    tun = make_tunnel()
+    vps = make_vps()
+    monkeypatch.setattr(p, "_vps_session_bytes", lambda v: None)
+    tf = p.traffic(tun, vps)
+    assert tf is not None
+    assert tf["rx_bytes"] == 0
+    assert tf["rx_rate_bps"] == 0
+    assert tf["tx_rate_bps"] == 0
+
+
 def test_build_command_with_password(tmp_path):
     """Con contrasena se limita la autenticacion a password/keyboard."""
     p = make_provider(tmp_path)
