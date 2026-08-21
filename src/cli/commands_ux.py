@@ -44,10 +44,9 @@ def cmd_status(args: argparse.Namespace) -> int:
     traffic_by_id: dict[str, dict] = {}
     for t in store.cfg.tunnels:
         try:
-            if ssh.is_alive(t):
-                tf = ssh.traffic(t, store.get_vps(t.vps_id))
-                if tf:
-                    traffic_by_id[t.id] = tf
+            tf = ssh.traffic_snapshot(t)
+            if tf:
+                traffic_by_id[t.id] = tf
         except Exception:  # noqa: BLE001
             continue
     for tun in data.get("tunnels", []):

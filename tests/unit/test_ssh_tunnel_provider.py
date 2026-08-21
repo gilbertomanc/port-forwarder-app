@@ -118,6 +118,44 @@ def test_traffic_sin_sesiones(tmp_path, monkeypatch):
     assert tf["tx_rate_bps"] == 0
 
 
+def test_vps_session_bytes_usa_la_sesion_mayor(tmp_path, monkeypatch):
+    """Evita contar la sesion de medicion (la mayor es el tunnel real)."""
+    from src.providers.ssh_tunnel_provider import sp
+
+    p = make_provider(tmp_path)
+    vps = make_vps()
+    out = (
+        "0 0 167.114.169.134:10000 1.2.3.4:5000\n"
+        "\t cubic ... bytes_sent:100 bytes_received:50 ...\n"
+        "0 0 167.114.169.134:10000 1.2.3.4:5001\n"
+        "\t cubic ... bytes_sent:9000 bytes_received:3000 ...\n"
+        "0 0 167.114.169.134:10000 1.2.3.4:5002\n"
+        "\t cubic ... bytes_sent:500 bytes_received:100 ...\n"
+    )
+    proc = mock.Mock()
+    proc.returncode = 0
+    proc.stdout = out
+    proc.stderr = ""
+    monkeypatch.setattr(sp, "run", lambda *a, **k: proc)
+    assert p._vps_session_bytes(vps) == (3000, 9000)
+
+
+def test_traffic_snapshot_no_abre_ssh(tmp_path):
+    """traffic_snapshot lee lo persistido sin tocar el VPS."""
+    p = make_provider(tmp_path)
+    tun = make_tunnel()
+    assert p.traffic_snapshot(tun) is None
+    p._traffic_file(tun.id).write_text(
+        '{"rx_total": 100, "tx_total": 50, "rx_rate_bps": 10, "tx_rate_bps": 5}',
+        encoding="utf-8",
+    )
+    snap = p.traffic_snapshot(tun)
+    assert snap is not None
+    assert snap["rx_bytes"] == 100
+    assert snap["tx_bytes"] == 50
+    assert snap["rx_rate_bps"] == 10
+
+
 def test_build_command_with_password(tmp_path):
     """Con contrasena se limita la autenticacion a password/keyboard."""
     p = make_provider(tmp_path)

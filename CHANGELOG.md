@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.8 (2026-08-21) — trafico optimizado + fixes
+
+- **Trafico sin conexiones SSH en cada lectura**: el supervisor muestrea cada
+  ciclo (traffic()) y persiste el snapshot; `status`, panel web, ventana y
+  wsl-port leen `traffic_snapshot()` (sin abrir SSH al VPS en cada refresco).
+- `_vps_session_bytes` usa la **sesion con mayor acumulado** (no la suma):
+  evita contar los bytes de la propia sesion de medicion.
+- Tests nuevos: sesion mayor, snapshot sin SSH. Suite: **154 passed**.
+
 ## v0.2.7 (2026-08-19) — trafico por tunnel
 
 - **Medicion de trafico por tunnel**: bytes acumulados (rx/tx) y velocidad

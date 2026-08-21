@@ -898,10 +898,9 @@ def _open_window(sup: Supervisor, close_to_tray: bool | None = None) -> None:
         tr: dict[str, dict] = {}
         for t in sup.store.cfg.tunnels:
             try:
-                if sup.ssh.is_alive(t):
-                    tf = sup.ssh.traffic(t, sup.store.get_vps(t.vps_id))
-                    if tf:
-                        tr[t.id] = tf
+                tf = sup.ssh.traffic_snapshot(t)
+                if tf:
+                    tr[t.id] = tf
             except Exception:  # noqa: BLE001
                 continue
         return st, tr

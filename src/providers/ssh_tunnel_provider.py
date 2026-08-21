@@ -343,13 +343,17 @@ class SshTunnelProvider:
         except OSError:
             return None
         out = proc.stdout or ""
-        rx = tx = 0
+        # La sesion del tunnel es la de MAYOR acumulado (las sesiones de
+        # medicion son nuevas y diminutas): evita contar la propia consulta.
+        best = None
         for m in _re.finditer(r"bytes_sent:(\d+)[^\n]*bytes_received:(\d+)", out):
-            tx += int(m.group(1))
-            rx += int(m.group(2))
-        if rx == 0 and tx == 0:
+            tx_b = int(m.group(1))
+            rx_b = int(m.group(2))
+            if best is None or (tx_b + rx_b) > (best[0] + best[1]):
+                best = (rx_b, tx_b)
+        if best is None or best == (0, 0):
             return None
-        return rx, tx
+        return best
 
     def traffic(self, tunnel: Tunnel, vps: Vps | None = None) -> dict | None:
         """Bytes acumulados del tunnel (persistidos) + velocidad actual (B/s).
@@ -403,6 +407,8 @@ class SshTunnelProvider:
         stats["tx_total"] = int(stats.get("tx_total", 0)) + d_tx
         rx_rate = int(d_rx / dt) if dt and dt > 0 else 0
         tx_rate = int(d_tx / dt) if dt and dt > 0 else 0
+        stats["rx_rate_bps"] = rx_rate
+        stats["tx_rate_bps"] = tx_rate
         stats["prev_vps_rx"] = rx
         stats["prev_vps_tx"] = tx
         stats["last_ts"] = now
@@ -415,6 +421,29 @@ class SshTunnelProvider:
             "tx_bytes": int(stats["tx_total"]),
             "rx_rate_bps": rx_rate,
             "tx_rate_bps": tx_rate,
+        }
+
+    def traffic_snapshot(self, tunnel: Tunnel) -> dict | None:
+        """Ultimo muestreo persistido del tunnel, SIN abrir SSH al VPS.
+
+        El supervisor muestrea periodicamente (traffic()); las lecturas
+        (status, panel web, GUI, wsl-port) usan este snapshot para no generar
+        conexiones SSH en cada refresco.
+        """
+        import json as _json
+
+        stats_path = self._traffic_file(tunnel.id)
+        if not stats_path.exists():
+            return None
+        try:
+            stats = _json.loads(stats_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+        return {
+            "rx_bytes": int(stats.get("rx_total", 0)),
+            "tx_bytes": int(stats.get("tx_total", 0)),
+            "rx_rate_bps": int(stats.get("rx_rate_bps", 0)),
+            "tx_rate_bps": int(stats.get("tx_rate_bps", 0)),
         }
 
     def restart(self, tunnel: Tunnel, vps: Vps | None = None) -> subprocess.Popen:
