@@ -575,12 +575,12 @@ def _build_settings_tab(nb, sup: Supervisor, root) -> None:
         if vbs.exists():
             return
         content = (
-            "' Lanzador oculto de Port Forwarding (auto-generado): sin terminal.\n"
+            "' Lanzador oculto de Port Forwarding (auto-generado): pythonw, SIN terminal.\n"
             "Set sh = CreateObject(\"WScript.Shell\")\n"
             "Set fso = CreateObject(\"Scripting.FileSystemObject\")\n"
             "dir = fso.GetParentFolderName(WScript.ScriptFullName)\n"
-            "sh.Run \"\"\"\" & dir & \"\\.venv\\Scripts\\port-forwarder.exe\"\""
-            " web start\", 0, False\n"
+            "sh.Run \"\"\"\" & dir & \"\\.venv\\Scripts\\pythonw.exe\"\""
+            " -m src.cli web start\", 0, False\n"
         )
         try:
             vbs.write_text(content, encoding="utf-8")
