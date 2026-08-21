@@ -135,7 +135,7 @@ def _mcp_env(tmp_path) -> dict:
                                           "token_required": False}}),
         encoding="utf-8",
     )
-    return dict(os.environ, APPDATA=str(appdata))
+    return dict(os.environ, APPDATA=str(appdata), XDG_CONFIG_HOME=str(appdata))
 
 
 @pytest.mark.smoke

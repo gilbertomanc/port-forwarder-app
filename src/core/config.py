@@ -15,6 +15,7 @@ from __future__ import annotations
 import copy
 import json
 import shutil
+import sys
 import time
 from dataclasses import asdict, dataclass, field, fields
 from typing import Any, TypeVar
@@ -297,6 +298,15 @@ def parse_config(data: dict[str, Any]) -> AppConfig:
     except (TypeError, ValueError) as e:
         raise ConfigError(f"schema invalido: {e}") from e
 
+    # Rutas de binarios: en entornos no-Windows, ignorar rutas de Windows
+    # guardadas en la config (p. ej. una config creada en Windows) y usar
+    # el binario de la plataforma (ssh/netsh/wsl del PATH).
+    if sys.platform != "win32":
+        for _f in ("ssh_exe", "netsh_exe", "wsl_exe"):
+            _v = getattr(cfg.windows, _f)
+            if isinstance(_v, str) and len(_v) > 1 and _v[1] == ":":
+                setattr(cfg.windows, _f, "")
+
     cfg.windows.ssh_exe = paths.expand_env(cfg.windows.ssh_exe) or _default_ssh()
     cfg.windows.netsh_exe = paths.expand_env(cfg.windows.netsh_exe) or _default_netsh()
     cfg.windows.wsl_exe = paths.expand_env(cfg.windows.wsl_exe) or _default_wsl()
@@ -306,15 +316,18 @@ def parse_config(data: dict[str, Any]) -> AppConfig:
 
 
 def _default_ssh() -> str:
-    return r"C:\Windows\System32\OpenSSH\ssh.exe"
+    return (r"C:\Windows\System32\OpenSSH\ssh.exe"
+            if sys.platform == "win32" else "ssh")
 
 
 def _default_netsh() -> str:
-    return r"C:\Windows\System32\netsh.exe"
+    return (r"C:\Windows\System32\netsh.exe"
+            if sys.platform == "win32" else "netsh")
 
 
 def _default_wsl() -> str:
-    return r"C:\Windows\System32\wsl.exe"
+    return (r"C:\Windows\System32\wsl.exe"
+            if sys.platform == "win32" else "wsl")
 
 
 def _validate(cfg: AppConfig) -> None:

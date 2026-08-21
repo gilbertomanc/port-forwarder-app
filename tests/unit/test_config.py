@@ -28,7 +28,12 @@ def store(tmp_path):
 def test_default_config_created(store):
     assert store.cfg.version == 2
     assert store.cfg.forwards == []
-    assert store.cfg.windows.ssh_exe.endswith("ssh.exe")
+    import sys
+
+    if sys.platform == "win32":
+        assert store.cfg.windows.ssh_exe.endswith("ssh.exe")
+    else:
+        assert store.cfg.windows.ssh_exe == "ssh"
 
 
 def test_invalid_json_raises(tmp_path):

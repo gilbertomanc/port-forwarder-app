@@ -158,19 +158,30 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         if not ok:
             problems.append(f"{name}: {detail}")
 
-    _check("netsh", sp.run([store.cfg.windows.netsh_exe,
-                            "interface", "portproxy", "show", "all"],
-                           timeout=10, check=False).returncode == 0,
-           "netsh no responde")
-    _check("admin (para forwards)", sp.is_admin(),
-           "aplicar forwards pedira UAC")
-    _check("ssh", sp.run([store.cfg.windows.ssh_exe, "-V"],
-                         timeout=10, check=False).returncode in (0, 1),
-           "ssh.exe no disponible")
+    def _safe(fn) -> bool:
+        """Ejecuta el chequeo sin romper el doctor si el binario falta
+        (p. ej. netsh/wsl no existen en Linux)."""
+        try:
+            return bool(fn())
+        except Exception:  # noqa: BLE001
+            return False
+
+    if sys.platform == "win32":
+        _check("netsh", _safe(lambda: sp.run(
+            [store.cfg.windows.netsh_exe, "interface", "portproxy", "show", "all"],
+            timeout=10, check=False).returncode == 0),
+            "netsh no responde")
+        _check("admin (para forwards)", sp.is_admin(),
+               "aplicar forwards pedira UAC")
+    else:
+        _check("netsh", True, "")  # solo aplica en Windows
+    _check("ssh", _safe(lambda: sp.run([store.cfg.windows.ssh_exe, "-V"],
+                                       timeout=10, check=False).returncode in (0, 1)),
+           "ssh no disponible")
 
     distros = [f.wsl_distro for f in store.cfg.forwards if f.wsl_distro]
     for d in dict.fromkeys(distros):
-        ip = wsl.get_ip(d)
+        ip = _safe(lambda: wsl.get_ip(d))
         _check(f"wsl distro '{d}'", ip is not None,
                "distro detenida o inexistente (usa 'wsl -l')")
 
@@ -180,14 +191,15 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             _check(f"tunnel {t.id} -> vps {t.vps_id}", False,
                    "vps_id no existe en config")
             continue
-        _check(f"vps {vps.id} alcanzable", ssh.latency(t, vps) is not None,
+        _check(f"vps {vps.id} alcanzable",
+               _safe(lambda: ssh.latency(t, vps) is not None),
                "VPS inalcanzable o GatewayPorts off")
-        _check(f"tunnel {t.id} identidad", 
+        _check(f"tunnel {t.id} identidad",
                bool(vps.identity_file) or True,
                "")
 
     for f in store.cfg.forwards:
-        conflicts = netsh.detect_conflicts(f.listen_port)
+        conflicts = _safe(lambda: netsh.detect_conflicts(f.listen_port))
         _check(f"puerto :{f.listen_port} libre", not conflicts,
                f"en uso por PIDs {conflicts}")
 

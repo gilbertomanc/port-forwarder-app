@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.9 (2026-08-21) — Linux headless verificado y corregido
+
+- **Verificado en Linux sin interfaz grafica** (WSL Debian, Python 3.13):
+  tests **154/154** en Linux, CLI, secrets y panel web headless (200/401/200).
+- **Fix `doctor` en Linux**: ya no crasheaba intentando ejecutar
+  `C:\Windows\System32\netsh.exe`. La config ahora ignora rutas de Windows en
+  entornos no-Windows y usa los binarios de la plataforma (`ssh`/`netsh`/`wsl`);
+  `doctor` tolera binarios ausentes (chequeos con `_safe`).
+- **Tests MCP multiplataforma**: `_mcp_env` define `XDG_CONFIG_HOME` ademas de
+  `APPDATA` (aislamiento correcto en Linux).
+- Test `test_default_config_created` con defaults por plataforma.
+
 ## v0.2.8 (2026-08-21) — trafico optimizado + fixes
 
 - **Trafico sin conexiones SSH en cada lectura**: el supervisor muestrea cada
