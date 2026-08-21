@@ -153,6 +153,9 @@ port-forwarder tunnels status tunnel-web --json   # incluye "traffic" (rx/tx + v
 > → sección **Servidores VPS** (listar, nuevo, editar y eliminar), con aviso si
 > un VPS está en uso por túneles.
 >
+> 📘 **Manual completo:** [publicar servicios de WSL en Internet a través de tu
+> VPS](docs/manual-wsl-vps.md).
+>
 > **Keepalive para túneles estables** (evita cortes por NAT/firewall): el cliente
 > lanza **autossh** (si está instalado) con `-M 0 -o ServerAliveInterval=30 -o
 > ServerAliveCountMax=3 -o TCPKeepAlive=yes -o ExitOnForwardFailure=yes -o
