@@ -567,6 +567,26 @@ def _build_settings_tab(nb, sup: Supervisor, root) -> None:
         vbs = Path(__file__).resolve().parents[2] / "start_port_forwarder.vbs"
         return f'wscript.exe "{vbs}"'
 
+    def _ensure_auto_vbs() -> None:
+        """Crea el lanzador VBS (ventana oculta) si no existe: el autoarranque
+        via wscript necesita ese archivo y, sin el, podia abrirse una terminal
+        o un error breve al iniciar sesion."""
+        vbs = Path(__file__).resolve().parents[2] / "start_port_forwarder.vbs"
+        if vbs.exists():
+            return
+        content = (
+            "' Lanzador oculto de Port Forwarding (auto-generado): sin terminal.\n"
+            "Set sh = CreateObject(\"WScript.Shell\")\n"
+            "Set fso = CreateObject(\"Scripting.FileSystemObject\")\n"
+            "dir = fso.GetParentFolderName(WScript.ScriptFullName)\n"
+            "sh.Run \"\"\"\" & dir & \"\\.venv\\Scripts\\port-forwarder.exe\"\""
+            " web start\", 0, False\n"
+        )
+        try:
+            vbs.write_text(content, encoding="utf-8")
+        except OSError:
+            pass
+
     def _auto_active() -> bool:
         try:
             with OpenKey(HKEY_CURRENT_USER, RUN_KEY) as k:
@@ -575,6 +595,8 @@ def _build_settings_tab(nb, sup: Supervisor, root) -> None:
             return False
 
     def _set_auto(active: bool) -> None:
+        if active:
+            _ensure_auto_vbs()
         with CreateKey(HKEY_CURRENT_USER, RUN_KEY) as k:
             if active:
                 SetValueEx(k, AUTOSTART_NAME, 0, 1, _auto_command())  # REG_SZ
